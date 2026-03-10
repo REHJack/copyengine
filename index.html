@@ -3,27 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Copy Engine v6.0</title>
+<title>Copy Engine v6.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;color:#1a1a1a;min-height:100vh;font-size:14px}
-
-/* ── Page ── */
 .page{max-width:1340px;margin:0 auto;padding:40px 32px}
 .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:36px;gap:16px;flex-wrap:wrap;padding-bottom:24px;border-bottom:1px solid #e5e5e5}
 .main-grid{display:grid;grid-template-columns:1fr 320px;gap:28px}
 @media(max-width:900px){.main-grid{grid-template-columns:1fr}}
-
-/* ── Brand ── */
 .brand{display:flex;align-items:center;gap:12px}
 .brand-name{font-size:20px;font-weight:900;letter-spacing:-.5px;color:#111}
-.brand-ver{font-size:10px;font-weight:800;color:#6366f1;background:#ede9fe;padding:3px 9px;border-radius:99px;letter-spacing:.02em}
+.brand-ver{font-size:10px;font-weight:800;color:#6366f1;background:#ede9fe;padding:3px 9px;border-radius:99px}
 .brand-sub{font-size:11px;color:#999;margin-top:2px}
-
-/* ── Buttons ── */
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;white-space:nowrap;letter-spacing:.01em}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;white-space:nowrap}
 .btn:active{transform:scale(.97)}
 .btn-ghost{background:#fff;border-color:#e0e0e0;color:#555;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .btn-ghost:hover{border-color:#999;color:#111}
@@ -31,33 +25,73 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 .btn-primary:hover{background:#2a2a2a}
 .btn-violet{background:#6366f1;color:#fff;border-color:#6366f1;box-shadow:0 1px 4px rgba(99,102,241,.3)}
 .btn-violet:hover{background:#4f46e5}
-.btn-teal{background:#0d9488;color:#fff;border-color:#0d9488;box-shadow:0 1px 4px rgba(13,148,136,.25)}
+.btn-teal{background:#0d9488;color:#fff;border-color:#0d9488}
 .btn-teal:hover{background:#0f766e}
 .btn-sm{padding:8px 14px;font-size:11px}
 
-/* ── Editor ── */
+/* ── Editor: textarea on top, highlight div behind ── */
 .editor-shell{border:1.5px solid #e0e0e0;border-radius:14px;background:#fff;overflow:hidden;transition:border-color .2s;box-shadow:0 1px 6px rgba(0,0,0,.05)}
 .editor-shell:focus-within{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08)}
 .editor-wrap{position:relative;min-height:420px}
-#overlay,#editor{position:absolute;inset:0;padding:22px;font-size:15px;line-height:1.85;font-family:inherit;white-space:pre-wrap;word-wrap:break-word;overflow-y:auto}
-#editor{background:transparent;color:transparent;caret-color:#6366f1;z-index:2;resize:none;border:none;outline:none}
-#overlay{background:#fff;color:#1a1a1a;z-index:1;pointer-events:none;border-radius:14px 14px 0 0}
+
+/* Both layers must share IDENTICAL typography so text aligns perfectly */
+#editor-textarea, #editor-overlay {
+  position:absolute;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  margin:0;
+  padding:22px;
+  font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
+  font-size:15px;
+  line-height:1.85;
+  letter-spacing:normal;
+  word-spacing:normal;
+  white-space:pre-wrap;
+  word-wrap:break-word;
+  overflow-wrap:break-word;
+  tab-size:4;
+  border:none;
+  outline:none;
+  overflow-y:scroll;
+  overflow-x:hidden;
+  box-sizing:border-box;
+}
+#editor-textarea {
+  color:transparent;
+  background:transparent;
+  caret-color:#6366f1;
+  resize:none;
+  z-index:2;
+  /* Ensure no browser-specific styling interferes */
+  -webkit-text-fill-color:transparent;
+}
+#editor-overlay {
+  color:#1a1a1a;
+  background:#fff;
+  pointer-events:none;
+  z-index:1;
+  border-radius:14px 14px 0 0;
+}
+/* Placeholder */
+#editor-textarea::placeholder{color:#bbb;-webkit-text-fill-color:#bbb}
+
 .editor-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid #f0f0f0;background:#fafafa;flex-wrap:wrap;gap:8px}
 .legend{display:flex;gap:12px;flex-wrap:wrap}
 .leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#888;font-weight:600}
 .leg-dot{width:9px;height:9px;border-radius:3px}
 
 /* ── Highlights ── */
-.ph{background:#fee2e2;border-bottom:2px solid #ef4444;color:#991b1b;padding:0 2px;border-radius:3px;cursor:pointer;pointer-events:all;position:relative}
+.ph{background:#fee2e2;border-bottom:2px solid #ef4444;color:#991b1b;padding:0 2px;border-radius:3px;cursor:pointer;position:relative}
 .fh{background:#fef9c3;border-bottom:2px solid #eab308;color:#854d0e;padding:0 2px;border-radius:3px}
 .sh{background:#ffedd5;border-bottom:2px solid #f97316;color:#9a3412;padding:0 2px;border-radius:3px}
-.ch{background:#f3e8ff;border-bottom:2px solid #a855f7;color:#6b21a8;padding:0 2px;border-radius:3px;cursor:pointer;pointer-events:all;position:relative}
-.rh{background:#dbeafe;border-bottom:2px solid #3b82f6;color:#1e40af;padding:0 2px;border-radius:3px;cursor:pointer;pointer-events:all;position:relative}
+.ch{background:#f3e8ff;border-bottom:2px solid #a855f7;color:#6b21a8;padding:0 2px;border-radius:3px;cursor:pointer;position:relative}
+.rh{background:#dbeafe;border-bottom:2px solid #3b82f6;color:#1e40af;padding:0 2px;border-radius:3px;cursor:pointer;position:relative}
 .vh{background:#fce7f3;border-bottom:2px solid #ec4899;color:#9d174d;padding:0 2px;border-radius:3px}
 .tip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:11px;padding:7px 11px;border-radius:8px;z-index:200;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.18);width:210px;white-space:normal;text-align:center;line-height:1.45;display:none}
 .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#111}
 
-/* ── Stats bar ── */
+/* ── Stats ── */
 .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#e5e5e5;border:1.5px solid #e0e0e0;border-top:none;border-radius:0 0 14px 14px;overflow:hidden}
 @media(max-width:700px){.stats-row{grid-template-columns:repeat(3,1fr)}}
 .stat{background:#fff;padding:12px 14px}
@@ -65,17 +99,14 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 .stat-val{font-size:19px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
 .c-red{color:#ef4444}.c-amber{color:#d97706}.c-violet{color:#6366f1}.c-slate{color:#64748b}.c-blue{color:#3b82f6}
 
-/* ── Toggles ── */
 .toggle-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .toggle-pill{padding:5px 13px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e0e0e0;background:#fff;color:#888;transition:all .15s}
 .toggle-pill.active{background:#111;color:#fff;border-color:#111}
 
-/* ── Sidebar cards ── */
 .sidebar{display:flex;flex-direction:column;gap:14px}
 .card{background:#fff;border:1.5px solid #e5e5e5;border-radius:14px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .card-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#bbb;margin-bottom:13px}
 
-/* ── Gauge ── */
 .gauge-center{display:flex;flex-direction:column;align-items:center}
 .gauge-svg{overflow:visible}
 .g-bg{fill:none;stroke:#f0f0f0;stroke-width:9}
@@ -84,7 +115,6 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 .g-lbl{font-size:10px;fill:#bbb;text-anchor:middle;font-family:inherit}
 .score-msg{font-size:11px;color:#888;text-align:center;margin-top:7px;line-height:1.5;min-height:32px}
 
-/* ── Readability / Tone ── */
 .read-val{font-size:18px;font-weight:800;color:#111;margin-bottom:3px}
 .read-desc{font-size:11px;color:#aaa;line-height:1.55}
 .divider-line{border:none;border-top:1px solid #f0f0f0;margin:13px 0}
@@ -93,25 +123,21 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 .t-conv{background:#dcfce7;color:#166534}.t-neut{background:#f3f4f6;color:#374151}
 .tone-desc{font-size:11px;color:#aaa;line-height:1.5}
 
-/* ── Audience Matcher ── */
 .aud-select{width:100%;padding:9px 11px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:12px;font-family:inherit;color:#111;background:#fff;outline:none;cursor:pointer;transition:border-color .2s;margin-bottom:12px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%23999' d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
 .aud-select:focus{border-color:#6366f1}
-.aud-meter{margin-top:4px}
 .aud-bar-track{background:#f3f4f6;border-radius:99px;height:7px;overflow:hidden;margin:6px 0 4px}
 .aud-bar-fill{height:100%;border-radius:99px;transition:width .5s ease,background .3s}
 .aud-score-row{display:flex;justify-content:space-between;align-items:baseline}
 .aud-score-num{font-size:26px;font-weight:900}
-.aud-score-lbl{font-size:11px;color:#aaa}
 .aud-feedback{font-size:11px;color:#888;line-height:1.55;margin-top:6px}
 .aud-detail{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
 .aud-chip{background:#f8fafc;border:1.5px solid #f0f0f0;border-radius:8px;padding:7px 9px;text-align:center}
-.aud-chip-val{font-size:14px;font-weight:900;color:#111}
+.aud-chip-val{font-size:13px;font-weight:900;color:#111}
 .aud-chip-lbl{font-size:9px;color:#bbb;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:1px}
 
-/* ── Version Diff ── */
 .diff-area{width:100%;padding:12px;border:1.5px solid #e5e5e5;border-radius:9px;font-size:13px;font-family:inherit;color:#111;outline:none;resize:vertical;min-height:120px;line-height:1.7;transition:border-color .2s;background:#fff}
 .diff-area:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08)}
-.diff-output{margin-top:12px;font-size:13px;line-height:1.85;white-space:pre-wrap;word-wrap:break-word;max-height:300px;overflow-y:auto;padding:14px;background:#fafafa;border:1.5px solid #f0f0f0;border-radius:9px;display:none}
+.diff-output{margin-top:12px;font-size:13px;line-height:1.85;white-space:pre-wrap;word-wrap:break-word;max-height:340px;overflow-y:auto;padding:14px;background:#fafafa;border:1.5px solid #f0f0f0;border-radius:9px;display:none}
 .diff-output.has-content{display:block}
 .d-add{background:#dcfce7;color:#166534;border-radius:3px;padding:0 2px}
 .d-rem{background:#fee2e2;color:#991b1b;border-radius:3px;padding:0 2px;text-decoration:line-through}
@@ -121,15 +147,12 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 .diff-chip-rem{background:#fee2e2;color:#991b1b}
 .diff-chip-score{background:#ede9fe;color:#4f46e5}
 
-/* ── CTA ── */
 .cta-found{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:9px;padding:11px 13px;font-size:11px;color:#166534;line-height:1.6}
 .cta-missing{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:9px;padding:11px 13px;font-size:11px;color:#9a3412;line-height:1.6}
 
-/* ── Variety ── */
 .variety-track{background:#f3f4f6;border-radius:99px;height:6px;overflow:hidden;margin:6px 0 4px}
 .variety-fill{height:100%;border-radius:99px;transition:width .4s ease}
 
-/* ── Keywords ── */
 .kw-row{margin-bottom:10px}
 .kw-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
 .kw-word{font-size:12px;font-weight:700;color:#111;text-transform:capitalize}
@@ -141,21 +164,18 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 .s-low .kw-bar{background:#f59e0b}.s-low .kw-right{color:#d97706}
 .kw-badge{font-size:9px;font-weight:600;margin-left:3px;opacity:.7}
 
-/* ── Drafts ── */
 .draft-item{display:flex;justify-content:space-between;align-items:center;background:#fafafa;border:1.5px solid #f0f0f0;border-radius:9px;padding:9px 11px;cursor:pointer;transition:all .15s;margin-bottom:6px}
 .draft-item:hover{border-color:#6366f1;background:#faf9ff}
 .draft-meta{font-size:11px;color:#444;font-weight:600;margin-bottom:1px}
 .draft-time{font-size:10px;color:#bbb}
 .draft-score{font-size:12px;font-weight:800;color:#6366f1}
 
-/* ── Tips ── */
 .tip-card{background:#111;border-radius:14px;padding:18px}
 .tip-card .card-title{color:#6366f1}
 .tip-list{list-style:none;display:flex;flex-direction:column;gap:8px}
 .tip-list li{display:flex;gap:8px;font-size:11px;color:#777;line-height:1.6}
 .tip-list strong{color:#bbb}
 
-/* ── AI Panel ── */
 .ai-wrap{margin-top:14px;border:1.5px solid #e5e5e5;border-radius:14px;background:#fff;display:none;box-shadow:0 1px 6px rgba(0,0,0,.05)}
 .ai-wrap.open{display:block}
 .ai-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #f0f0f0}
@@ -181,10 +201,8 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 .ba-text{font-size:12px;color:#444;line-height:1.7}
 .ba-after .ba-text{color:#166534;background:#f0fdf4;padding:9px;border-radius:7px}
 
-/* ── Toast ── */
 .toast{position:fixed;bottom:28px;right:28px;background:#111;color:#fff;font-size:12px;font-weight:600;padding:11px 18px;border-radius:10px;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.2)}
 .toast.show{opacity:1;transform:translateY(0)}
-
 .spinner{width:22px;height:22px;border:2.5px solid #e5e5e5;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-wrap{text-align:center;padding:32px;color:#aaa;font-size:12px}
@@ -195,13 +213,9 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 <div class="toast" id="toast"></div>
 <div class="page" id="reportContent">
 
-  <!-- Header -->
   <div class="top-bar">
     <div>
-      <div class="brand">
-        <span class="brand-name">Copy Engine</span>
-        <span class="brand-ver">v6.0</span>
-      </div>
+      <div class="brand"><span class="brand-name">Copy Engine</span><span class="brand-ver">v6.2</span></div>
       <div class="brand-sub" id="reportDate"></div>
     </div>
     <div class="btn-row no-print">
@@ -219,22 +233,20 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
   </div>
 
   <div class="main-grid">
-
-    <!-- ── LEFT ── -->
     <div>
       <div class="toggle-row no-print">
-        <button class="toggle-pill active" data-mode="passive"   onclick="toggleMode(this)">🔴 Passive</button>
-        <button class="toggle-pill active" data-mode="filler"    onclick="toggleMode(this)">🟡 Fillers</button>
-        <button class="toggle-pill active" data-mode="sentence"  onclick="toggleMode(this)">🟠 Long Sentences</button>
-        <button class="toggle-pill active" data-mode="cliche"    onclick="toggleMode(this)">🟣 Clichés</button>
-        <button class="toggle-pill active" data-mode="repeat"    onclick="toggleMode(this)">🔵 Repetition</button>
-        <button class="toggle-pill active" data-mode="variety"   onclick="toggleMode(this)">🩷 Variety</button>
+        <button class="toggle-pill active" data-mode="passive"  onclick="toggleMode(this)">🔴 Passive</button>
+        <button class="toggle-pill active" data-mode="filler"   onclick="toggleMode(this)">🟡 Fillers</button>
+        <button class="toggle-pill active" data-mode="sentence" onclick="toggleMode(this)">🟠 Long Sentences</button>
+        <button class="toggle-pill active" data-mode="cliche"   onclick="toggleMode(this)">🟣 Clichés</button>
+        <button class="toggle-pill active" data-mode="repeat"   onclick="toggleMode(this)">🔵 Repetition</button>
+        <button class="toggle-pill active" data-mode="variety"  onclick="toggleMode(this)">🩷 Variety</button>
       </div>
 
       <div class="editor-shell">
         <div class="editor-wrap">
-          <div id="overlay"></div>
-          <textarea id="editor" spellcheck="false" placeholder="Paste your marketing copy here…"></textarea>
+          <div id="editor-overlay" aria-hidden="true"></div>
+          <textarea id="editor-textarea" spellcheck="false" placeholder="Paste your marketing copy here…"></textarea>
         </div>
         <div class="editor-footer">
           <div class="legend">
@@ -250,24 +262,22 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
       </div>
 
       <div class="stats-row">
-        <div class="stat"><div class="stat-label">Passive</div><div class="stat-val c-red"   id="sPassive">0</div></div>
-        <div class="stat"><div class="stat-label">Fillers</div><div class="stat-val c-amber"  id="sFiller">0</div></div>
+        <div class="stat"><div class="stat-label">Passive</div><div class="stat-val c-red"  id="sPassive">0</div></div>
+        <div class="stat"><div class="stat-label">Fillers</div><div class="stat-val c-amber" id="sFiller">0</div></div>
         <div class="stat"><div class="stat-label">Clichés</div><div class="stat-val" style="color:#a855f7" id="sCliche">0</div></div>
-        <div class="stat"><div class="stat-label">Repeats</div><div class="stat-val c-blue"   id="sRepeat">0</div></div>
-        <div class="stat"><div class="stat-label">Words</div><div class="stat-val c-violet"   id="sWords">0</div></div>
-        <div class="stat"><div class="stat-label">Chars</div><div class="stat-val c-slate"    id="sChars">0</div></div>
+        <div class="stat"><div class="stat-label">Repeats</div><div class="stat-val c-blue"  id="sRepeat">0</div></div>
+        <div class="stat"><div class="stat-label">Words</div><div class="stat-val c-violet"  id="sWords">0</div></div>
+        <div class="stat"><div class="stat-label">Chars</div><div class="stat-val c-slate"   id="sChars">0</div></div>
       </div>
 
-      <!-- Version Diff -->
       <div class="card" style="margin-top:20px">
         <div class="card-title">Version Diff — Compare Drafts</div>
-        <textarea class="diff-area" id="diffInput" placeholder="Paste a previous version of your copy here to compare it against the editor…"></textarea>
+        <textarea class="diff-area" id="diffInput" placeholder="Paste a previous version of your copy here to compare…"></textarea>
         <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="runDiff()">Compare Versions</button>
         <div class="diff-summary" id="diffSummary" style="display:none"></div>
         <div class="diff-output" id="diffOutput"></div>
       </div>
 
-      <!-- AI Panel -->
       <div class="ai-wrap" id="aiPanel">
         <div class="ai-head">
           <div class="ai-title">✦ AI Copy Audit Report</div>
@@ -277,10 +287,7 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
       </div>
     </div>
 
-    <!-- ── SIDEBAR ── -->
     <div class="sidebar">
-
-      <!-- Score -->
       <div class="card">
         <div class="card-title">Active Voice Score</div>
         <div class="gauge-center">
@@ -294,10 +301,9 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
         </div>
       </div>
 
-      <!-- Audience Matcher -->
       <div class="card">
         <div class="card-title">Audience Matcher</div>
-        <select class="aud-select" id="audSelect" onchange="updateAudience()">
+        <select class="aud-select" id="audSelect" onchange="updateAudience();persistSave()">
           <option value="">— Select your target audience —</option>
           <option value="general">General Public</option>
           <option value="consumer">Consumer / Shopper</option>
@@ -309,7 +315,6 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
         <div id="audResult"><p style="font-size:11px;color:#ccc;font-style:italic">Select an audience to score your copy.</p></div>
       </div>
 
-      <!-- Readability + Tone -->
       <div class="card">
         <div class="card-title">Readability</div>
         <div class="read-val" id="readVal">—</div>
@@ -320,31 +325,28 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
         <div class="tone-desc" id="toneDesc">—</div>
       </div>
 
-      <!-- Sentence Variety -->
       <div class="card">
         <div class="card-title">Sentence Variety</div>
         <div id="varietyBlock"><p style="font-size:11px;color:#ccc;font-style:italic">Paste text to analyse.</p></div>
       </div>
 
-      <!-- CTA -->
       <div class="card">
         <div class="card-title">Call to Action</div>
         <div id="ctaBlock"><p style="font-size:11px;color:#ccc;font-style:italic">Paste text to detect.</p></div>
       </div>
 
-      <!-- Keywords -->
       <div class="card">
         <div class="card-title">SEO Keyword Density</div>
         <input id="targetKW" type="text" placeholder="Enter target keyword…"
           style="width:100%;padding:9px 11px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:12px;font-family:inherit;color:#111;outline:none;transition:border-color .2s;margin-bottom:10px;background:#fff"
-          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e5e5'" oninput="analyse()">
+          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e5e5'"
+          oninput="analyse();persistSave()">
         <div id="targetKWResult"></div>
         <hr class="divider-line" style="margin:10px 0">
         <div class="card-title" style="margin-bottom:9px">Top Keywords Found</div>
         <div id="kwList"><p style="font-size:11px;color:#ccc;font-style:italic">No keywords yet.</p></div>
       </div>
 
-      <!-- Drafts -->
       <div class="card no-print">
         <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
           <span>Saved Drafts</span>
@@ -353,7 +355,6 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
         <div id="draftList" style="margin-top:10px"><p style="font-size:11px;color:#ccc;font-style:italic">No drafts yet.</p></div>
       </div>
 
-      <!-- Tips -->
       <div class="tip-card no-print">
         <div class="card-title">Quick Fix Tips</div>
         <ul class="tip-list">
@@ -361,7 +362,7 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
           <li><span>→</span><span>Click <strong style="color:#fca5a5">red</strong> or <strong style="color:#c4b5fd">purple</strong> highlights for fix suggestions.</span></li>
           <li><span>→</span><span><strong style="color:#93c5fd">Blue</strong> = word repeated too close together.</span></li>
           <li><span>→</span><span><strong style="color:#f9a8d4">Pink</strong> = consecutive sentences starting the same way.</span></li>
-          <li><span>→</span><span>Use <strong>Version Diff</strong> to compare drafts and track improvements.</span></li>
+          <li><span>→</span><span>Keep sentences <strong>under 30 words</strong> for maximum punch.</span></li>
         </ul>
       </div>
     </div>
@@ -369,351 +370,291 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 </div>
 
 <script>
-// ── Data ──────────────────────────────────────────────────────────────────────
-const editor = document.getElementById('editor');
-const overlay = document.getElementById('overlay');
+const ta  = document.getElementById('editor-textarea');
+const ov  = document.getElementById('editor-overlay');
+const STORAGE_KEY = 'copyengine_v62';
 
 const FILLERS = ['just','really','very','basically','actually','literally','simply','totally','perhaps','maybe','quite','slightly','rather','fairly','highly','extremely'];
 const STOP = new Set(['the','and','for','this','that','with','from','your','their','have','been','will','they','what','when','were','which','about','into','more','some','than','then','them','these','those','also','each','much','such','both','even','most','over','after','before','through','between','should','would','could','shall','does','doing','there','here','where','while','within','without','other','another','every','because','since','though','although','however','therefore','thus','hence','indeed','still','again','never','always','often','must','need','make','take','come','goes','like','many','well','back','only','same','good','high','long','great','small','large','next','last','first']);
-
 const PASSIVE_RE = /\b(am|is|are|was|were|be|been|being)\s+(shown|taken|known|given|seen|found|kept|told|held|brought|written|set|left|made|built|delivered|processed|organized|organised|published|[a-z]{4,}ed)\b/gi;
-
-const PASSIVE_FIXES = {
-  'is generated':'generates','was generated':'generated','are built':'build','was built':'built',
-  'is delivered':'delivers','was delivered':'delivered','is processed':'processes','was processed':'processed',
-  'is written':'writes','was written':'wrote','is made':'makes','was made':'made',
-  'is found':'finds','was found':'found','is known':'knows','was known':'knew',
-  'is seen':'sees','was seen':'saw','is given':'gives','was given':'gave',
-  'is shown':'shows','was shown':'showed','is taken':'takes','was taken':'took',
-  'is held':'holds','was held':'held','is told':'tells','was told':'told',
-};
-
-const CLICHES = {
-  'game changer':'Describe the actual impact','game-changer':'Describe the actual impact',
-  'move the needle':'Specify what metric improves','synergy':'Try "collaboration" or be specific',
-  'think outside the box':'Describe the actual idea','low hanging fruit':'Try "quick wins"',
-  'low-hanging fruit':'Try "quick wins"','at the end of the day':'State your point directly',
-  'best in class':'Cite actual proof','best-in-class':'Cite actual proof',
-  'cutting edge':'Name the actual technology','cutting-edge':'Name the actual technology',
-  'world class':'Cite a stat or specific claim','world-class':'Cite a stat or specific claim',
-  'next level':'Describe the actual improvement','next-level':'Describe the actual improvement',
-  'robust':'Try "reliable" or "powerful"','leverage':'Try "use" or "apply"',
-  'scalable':'Describe what specifically grows','innovative':'Describe what makes it new',
-  'seamless':'Describe how it actually works','revolutionary':'Describe the actual change',
-  'disruptive':'Describe what it replaces','paradigm shift':'Describe the specific change',
-  'value add':'Describe the specific value','value-add':'Describe the specific value',
-  'circle back':'Try "follow up"','deep dive':'Try "detailed review"',
-  'bandwidth':'Try "capacity" or "time"',
-};
-
+const PASSIVE_FIXES = {'is generated':'generates','was generated':'generated','are built':'build','was built':'built','is delivered':'delivers','was delivered':'delivered','is processed':'processes','was processed':'processed','is written':'writes','was written':'wrote','is made':'makes','was made':'made','is found':'finds','was found':'found','is known':'knows','was known':'knew','is seen':'sees','was seen':'saw','is given':'gives','was given':'gave','is shown':'shows','was shown':'showed','is taken':'takes','was taken':'took','is held':'holds','was held':'held','is told':'tells','was told':'told'};
+const CLICHES = {'game changer':'Describe the actual impact','game-changer':'Describe the actual impact','move the needle':'Specify what metric improves','synergy':'Try "collaboration" or be specific','think outside the box':'Describe the actual idea','low hanging fruit':'Try "quick wins"','low-hanging fruit':'Try "quick wins"','at the end of the day':'State your point directly','best in class':'Cite actual proof','best-in-class':'Cite actual proof','cutting edge':'Name the actual technology','cutting-edge':'Name the actual technology','world class':'Cite a stat or specific claim','world-class':'Cite a stat or specific claim','next level':'Describe the actual improvement','next-level':'Describe the actual improvement','robust':'Try "reliable" or "powerful"','leverage':'Try "use" or "apply"','scalable':'Describe what specifically grows','innovative':'Describe what makes it new','seamless':'Describe how it actually works','revolutionary':'Describe the actual change','disruptive':'Describe what it replaces','paradigm shift':'Describe the specific change','value add':'Describe the specific value','value-add':'Describe the specific value','circle back':'Try "follow up"','deep dive':'Try "detailed review"','bandwidth':'Try "capacity" or "time"'};
 const CTA_PHRASES = ['buy now','get started','sign up','subscribe','download','learn more','try free','start free','book a demo','get a demo','request a demo','contact us','get in touch','claim your','start today','join now','order now','shop now','get access','unlock','discover','find out','see how','watch now','read more','apply now','register now','schedule','book now','get your','claim now','try it','speak to us','get a quote','request a quote','start your','begin your'];
-
 const TONE_AGG  = ['crush','dominate','destroy','kill','smash','win','beat','attack','force','unstoppable','ruthless','savage','obliterate','conquer'];
 const TONE_FORM = ['furthermore','therefore','henceforth','pursuant','accordingly','notwithstanding','herein','whereas','thereby','wherein'];
 const TONE_CONV = ['you','your','we','our','hey','awesome','great','love','easy','quick','simple','fun','together','discover','imagine'];
-
-// Audience profiles: [targetFK, maxPassive%, maxFiller%, maxSentLen, formality 0-1]
 const AUDIENCES = {
-  general:      {label:'General Public',      fk:[70,100], passive:3, filler:5, sentLen:18, formal:0.2, desc:'Short sentences, plain English, conversational tone.'},
-  consumer:     {label:'Consumer / Shopper',  fk:[65,100], passive:4, filler:6, sentLen:20, formal:0.3, desc:'Benefit-led, punchy, emotionally engaging.'},
-  professional: {label:'Professional',        fk:[50,75],  passive:6, filler:4, sentLen:24, formal:0.55,desc:'Clear and structured. Some industry terminology is fine.'},
-  csuite:       {label:'C-Suite / Executive', fk:[45,70],  passive:5, filler:3, sentLen:22, formal:0.65,desc:'Concise, outcome-focused, credible. No fluff.'},
-  technical:    {label:'Technical / Developer',fk:[30,60], passive:7, filler:3, sentLen:28, formal:0.6, desc:'Precise language, detail-rich, jargon acceptable.'},
-  academic:     {label:'Academic',            fk:[0,45],   passive:15,filler:2, sentLen:35, formal:0.9, desc:'Formal, evidence-based, complex structure tolerated.'},
+  general:      {fk:[70,100],passive:3, filler:5, sentLen:18,desc:'Short sentences, plain English, conversational tone.'},
+  consumer:     {fk:[65,100],passive:4, filler:6, sentLen:20,desc:'Benefit-led, punchy, emotionally engaging.'},
+  professional: {fk:[50,75], passive:6, filler:4, sentLen:24,desc:'Clear and structured. Some industry terminology is fine.'},
+  csuite:       {fk:[45,70], passive:5, filler:3, sentLen:22,desc:'Concise, outcome-focused, credible. No fluff.'},
+  technical:    {fk:[30,60], passive:7, filler:3, sentLen:28,desc:'Precise language, detail-rich, jargon acceptable.'},
+  academic:     {fk:[0,45],  passive:15,filler:2, sentLen:35,desc:'Formal, evidence-based, complex structure tolerated.'},
 };
 
-const modes = {passive:true,filler:true,sentence:true,cliche:true,repeat:true,variety:true};
-let drafts = [], saveTimer = null, lastScore = 0, lastFK = 60, lastWords = [], lastSentences = [];
+const modes={passive:true,filler:true,sentence:true,cliche:true,repeat:true,variety:true};
+let drafts=[],saveTimer=null,analyseTimer=null,lastScore=0,lastFK=60,lastWords=[],lastSentences=[];
 
-document.getElementById('reportDate').innerText = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+document.getElementById('reportDate').innerText=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-editor.addEventListener('scroll', () => { overlay.scrollTop = editor.scrollTop; });;
+// ── Sync scroll between textarea and overlay ──────────────────────────────────
+function syncScroll(){ ov.scrollTop = ta.scrollTop; }
+ta.addEventListener('scroll', syncScroll);
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Sync overlay height to textarea content height ────────────────────────────
+function syncHeight(){
+  // Reset height to auto so it can shrink, then set to scrollHeight
+  ta.style.height = 'auto';
+  const h = Math.max(420, ta.scrollHeight);
+  ta.style.height = h + 'px';
+  ov.style.height  = h + 'px';
+  // Keep the wrapper tall enough
+  ta.closest('.editor-wrap').style.minHeight = h + 'px';
+}
+
+// ── Main input handler ────────────────────────────────────────────────────────
+function onEditorInput(){
+  syncHeight();
+  clearTimeout(analyseTimer);
+  analyseTimer = setTimeout(()=>{ analyse(); scheduleSave(); persistSave(); }, 80);
+}
+
+ta.addEventListener('input', onEditorInput);
+
+// Strip HTML on paste, insert plain text
+ta.addEventListener('paste', e=>{
+  e.preventDefault();
+  const text = (e.clipboardData||window.clipboardData).getData('text/plain');
+  // Insert at cursor
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const before = ta.value.slice(0, start);
+  const after  = ta.value.slice(end);
+  ta.value = before + text + after;
+  ta.selectionStart = ta.selectionEnd = start + text.length;
+  onEditorInput();
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function splitSentences(text) {
-  const parts = [];
-  let buf = '';
-  for (let i = 0; i < text.length; i++) {
-    buf += text[i];
-    if ('.!?'.includes(text[i]) && i < text.length-1 && text[i+1] === ' ') {
-      parts.push(buf.trimEnd()); buf = ''; i++;
+function splitSentences(text){
+  const parts=[]; let buf='';
+  for(let i=0;i<text.length;i++){
+    buf+=text[i];
+    if('.!?'.includes(text[i])&&i<text.length-1&&text[i+1]===' '){
+      parts.push(buf.trimEnd()); buf=''; i++;
     }
   }
-  if (buf.trim()) parts.push(buf.trimEnd());
-  return parts.filter(s => s.trim().length > 0);
+  if(buf.trim()) parts.push(buf.trimEnd());
+  return parts.filter(s=>s.trim().length>0);
 }
 
-function countSylls(word) {
-  word = word.toLowerCase();
-  if (word.length <= 3) return 1;
-  word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/,'').replace(/^y/,'');
-  const s = word.match(/[aeiouy]{1,2}/g);
-  return s ? s.length : 1;
+function countSylls(word){
+  word=word.toLowerCase(); if(word.length<=3) return 1;
+  word=word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/,'').replace(/^y/,'');
+  const s=word.match(/[aeiouy]{1,2}/g); return s?s.length:1;
 }
 
-function getSug(m) {
-  const k = m.toLowerCase();
-  for (const [key,val] of Object.entries(PASSIVE_FIXES)) if (k.includes(key)) return `Active: "${val}"`;
+function getSug(m){
+  const k=m.toLowerCase();
+  for(const [key,val] of Object.entries(PASSIVE_FIXES)) if(k.includes(key)) return `Active: "${val}"`;
   return 'Rewrite with an active verb';
 }
 
-function toggleMode(btn) {
-  const m = btn.dataset.mode;
-  modes[m] = !modes[m];
-  btn.classList.toggle('active', modes[m]);
+function toggleMode(btn){
+  modes[btn.dataset.mode]=!modes[btn.dataset.mode];
+  btn.classList.toggle('active',modes[btn.dataset.mode]);
   analyse();
 }
 
-function showTip(el) {
-  const t = el.querySelector('.tip');
-  if (!t) return;
-  const vis = t.style.display === 'block';
-  document.querySelectorAll('.tip').forEach(x => x.style.display='none');
-  t.style.display = vis ? 'none' : 'block';
+function showTip(el){
+  const t=el.querySelector('.tip'); if(!t) return;
+  const vis=t.style.display==='block';
+  document.querySelectorAll('.tip').forEach(x=>x.style.display='none');
+  t.style.display=vis?'none':'block';
 }
-document.addEventListener('click', e => {
-  if (!e.target.closest('.ph') && !e.target.closest('.ch') && !e.target.closest('.rh'))
-    document.querySelectorAll('.tip').forEach(t => t.style.display='none');
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.ph')&&!e.target.closest('.ch')&&!e.target.closest('.rh'))
+    document.querySelectorAll('.tip').forEach(t=>t.style.display='none');
 });
 
-// ── Core Analysis ─────────────────────────────────────────────────────────────
-function analyse() {
-  const text = editor.value;
-  if (!text.trim()) { resetUI(); return; }
+// ── Core analysis ─────────────────────────────────────────────────────────────
+function analyse(){
+  const text = ta.value;
+  if(!text.trim()){ resetUI(); return; }
 
-  lastWords = text.trim().split(/\s+/).filter(w => w.length > 0);
+  lastWords     = text.trim().split(/\s+/).filter(w=>w.length>0);
   lastSentences = splitSentences(text);
-  const chars = text.length;
 
-  document.getElementById('readingTime').innerText = Math.ceil(lastWords.length/238) <= 1 ? '< 1 min read' : `${Math.ceil(lastWords.length/238)} min read`;
+  document.getElementById('readingTime').innerText =
+    Math.ceil(lastWords.length/238)<=1?'< 1 min read':`${Math.ceil(lastWords.length/238)} min read`;
 
-  // Repetition map
-  const wordSentMap = {};
-  lastSentences.forEach((s,si) => {
+  // Repetition
+  const wsMap={};
+  lastSentences.forEach((s,si)=>{
     s.toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/)
-      .filter(w => w.length>4 && !STOP.has(w) && !FILLERS.includes(w))
-      .forEach(w => { if (!wordSentMap[w]) wordSentMap[w]=[]; wordSentMap[w].push(si); });
+      .filter(w=>w.length>4&&!STOP.has(w)&&!FILLERS.includes(w))
+      .forEach(w=>{ if(!wsMap[w]) wsMap[w]=[]; wsMap[w].push(si); });
   });
-  const repeatSet = new Set();
-  let repeatCount = 0;
-  Object.entries(wordSentMap).forEach(([w,idxs]) => {
-    for (let i=1;i<idxs.length;i++) { if (idxs[i]-idxs[i-1]<=2) { repeatSet.add(w); repeatCount++; break; } }
+  const repeatSet=new Set(); let repeatCount=0;
+  Object.entries(wsMap).forEach(([w,idxs])=>{
+    for(let i=1;i<idxs.length;i++) if(idxs[i]-idxs[i-1]<=2){ repeatSet.add(w); repeatCount++; break; }
   });
 
   // Variety
-  const starts = lastSentences.map(s => s.trim().split(/\s+/)[0]?.toLowerCase().replace(/[^a-z]/g,'') || '');
-  const varietyIssues = new Set();
-  for (let i=1;i<starts.length;i++) if (starts[i] && starts[i]===starts[i-1] && starts[i].length>2) varietyIssues.add(i);
+  const starts=lastSentences.map(s=>s.trim().split(/\s+/)[0]?.toLowerCase().replace(/[^a-z]/g,'')||'');
+  const varietyIssues=new Set();
+  for(let i=1;i<starts.length;i++) if(starts[i]&&starts[i]===starts[i-1]&&starts[i].length>2) varietyIssues.add(i);
 
-  let pCount=0, fCount=0, cCount=0;
+  let pCount=0,fCount=0,cCount=0;
 
-  const sentHTMLs = lastSentences.map((sent,si) => {
-    const annotations = [];
+  const sentHTMLs=lastSentences.map((sent,si)=>{
+    const ann=[];
 
-    if (modes.filler) FILLERS.forEach(w => {
-      const re = new RegExp(`\\b${w}\\b`,'gi'); let m;
-      while ((m=re.exec(sent))!==null) { fCount++; annotations.push({start:m.index,end:m.index+m[0].length,cls:'fh',tip:null}); }
+    if(modes.filler) FILLERS.forEach(w=>{
+      const re=new RegExp(`\\b${w}\\b`,'gi'); let m;
+      while((m=re.exec(sent))!==null){ fCount++; ann.push({start:m.index,end:m.index+m[0].length,cls:'fh',tip:null}); }
     });
 
-    if (modes.cliche) Object.entries(CLICHES).forEach(([phrase,tip]) => {
-      const re = new RegExp(`\\b${phrase.replace(/[-]/g,'[\\s-]')}\\b`,'gi'); let m;
-      while ((m=re.exec(sent))!==null) { cCount++; annotations.push({start:m.index,end:m.index+m[0].length,cls:'ch',tip}); }
+    if(modes.cliche) Object.entries(CLICHES).forEach(([phrase,tip])=>{
+      const re=new RegExp(`\\b${phrase.replace(/[-]/g,'[\\s-]')}\\b`,'gi'); let m;
+      while((m=re.exec(sent))!==null){ cCount++; ann.push({start:m.index,end:m.index+m[0].length,cls:'ch',tip}); }
     });
 
-    if (modes.repeat) repeatSet.forEach(w => {
-      const re = new RegExp(`\\b${w}\\b`,'gi'); let m;
-      while ((m=re.exec(sent))!==null) annotations.push({start:m.index,end:m.index+m[0].length,cls:'rh',tip:'Repeated nearby — try a synonym'});
+    if(modes.repeat) repeatSet.forEach(w=>{
+      const re=new RegExp(`\\b${w}\\b`,'gi'); let m;
+      while((m=re.exec(sent))!==null) ann.push({start:m.index,end:m.index+m[0].length,cls:'rh',tip:'Repeated nearby — try a synonym'});
     });
 
-    if (modes.passive) {
-      const pr = new RegExp(PASSIVE_RE.source,'gi'); let m;
-      while ((m=pr.exec(sent))!==null) { pCount++; annotations.push({start:m.index,end:m.index+m[0].length,cls:'ph',tip:getSug(m[0])}); }
+    if(modes.passive){
+      const pr=new RegExp(PASSIVE_RE.source,'gi'); let m;
+      while((m=pr.exec(sent))!==null){ pCount++; ann.push({start:m.index,end:m.index+m[0].length,cls:'ph',tip:getSug(m[0])}); }
     }
 
-    annotations.sort((a,b) => a.start-b.start || b.end-a.end);
-    const filtered = []; let cursor=0;
-    for (const ann of annotations) { if (ann.start>=cursor) { filtered.push(ann); cursor=ann.end; } }
+    ann.sort((a,b)=>a.start-b.start||b.end-a.end);
+    const filtered=[]; let cursor=0;
+    for(const a of ann) if(a.start>=cursor){ filtered.push(a); cursor=a.end; }
 
-    let html='', pos=0;
-    for (const ann of filtered) {
-      if (ann.start>pos) html += esc(sent.slice(pos,ann.start));
-      const inner = esc(sent.slice(ann.start,ann.end));
-      html += ann.tip
-        ? `<span class="${ann.cls}" onclick="showTip(this)">${inner}<span class="tip">${ann.tip}</span></span>`
-        : `<span class="${ann.cls}">${inner}</span>`;
-      pos = ann.end;
+    let html='',pos=0;
+    for(const a of filtered){
+      if(a.start>pos) html+=esc(sent.slice(pos,a.start));
+      const inner=esc(sent.slice(a.start,a.end));
+      html+=a.tip
+        ?`<span class="${a.cls}" onclick="showTip(this)">${inner}<span class="tip">${a.tip}</span></span>`
+        :`<span class="${a.cls}">${inner}</span>`;
+      pos=a.end;
     }
-    if (pos<sent.length) html += esc(sent.slice(pos));
+    if(pos<sent.length) html+=esc(sent.slice(pos));
 
-    if (modes.variety && varietyIssues.has(si)) html = `<span class="vh">${html}</span>`;
-    const wc = sent.trim().split(/\s+/).filter(w=>w.length>0).length;
-    if (modes.sentence && wc>=25) html = `<span class="sh">${html}</span>`;
+    if(modes.variety&&varietyIssues.has(si)) html=`<span class="vh">${html}</span>`;
+    const wc=sent.trim().split(/\s+/).filter(w=>w.replace(/[^a-zA-Z]/g,'').length>0).length;
+    if(modes.sentence&&wc>=30) html=`<span class="sh">${html}</span>`;
     return html;
   });
 
-  overlay.innerHTML = sentHTMLs.join(' ') + (text.endsWith('\n') ? '\n ' : '');
+  // Write to overlay — append a trailing newline so last line renders correctly
+  ov.innerHTML = sentHTMLs.join(' ') + '\n';
+  syncScroll();
 
-  document.getElementById('sPassive').innerText = pCount;
-  document.getElementById('sFiller').innerText  = fCount;
-  document.getElementById('sCliche').innerText  = cCount;
-  document.getElementById('sRepeat').innerText  = repeatCount;
-  document.getElementById('sWords').innerText   = lastWords.length;
-  document.getElementById('sChars').innerText   = chars;
+  document.getElementById('sPassive').innerText=pCount;
+  document.getElementById('sFiller').innerText =fCount;
+  document.getElementById('sCliche').innerText =cCount;
+  document.getElementById('sRepeat').innerText =repeatCount;
+  document.getElementById('sWords').innerText  =lastWords.length;
+  document.getElementById('sChars').innerText  =text.length;
 
-  const deduct = ((pCount*5)+(fCount*2)+(cCount*3)+(repeatCount*2))/(lastWords.length||1)*100;
-  lastScore = Math.max(0, 100-Math.round(deduct));
+  const deduct=((pCount*5)+(fCount*2)+(cCount*3)+(repeatCount*2))/(lastWords.length||1)*100;
+  lastScore=Math.max(0,100-Math.round(deduct));
   updateGauge(lastScore);
 
-  const sylls = lastWords.reduce((a,w)=>a+countSylls(w),0);
-  lastFK = 206.835-(1.015*(lastWords.length/(lastSentences.length||1)))-(84.6*(sylls/(lastWords.length||1)));
+  const sylls=lastWords.reduce((a,w)=>a+countSylls(w),0);
+  lastFK=206.835-(1.015*(lastWords.length/(lastSentences.length||1)))-(84.6*(sylls/(lastWords.length||1)));
   updateRead(lastFK);
   detectTone(lastWords);
-  updateVariety(lastSentences, varietyIssues);
+  updateVariety(lastSentences,varietyIssues);
   detectCTA(text);
-  updateKW(lastWords, text);
+  updateKW(lastWords,text);
   updateAudience();
 }
 
-// ── Gauge ──
-function updateGauge(score) {
-  const fill=document.getElementById('gFill'), num=document.getElementById('gNum'), msg=document.getElementById('scoreMsg');
-  fill.style.strokeDashoffset = 204-(score/100)*204;
-  num.textContent = score+'%';
-  if (score>85) { fill.style.stroke='#22c55e'; msg.innerHTML='<span style="color:#16a34a;font-weight:700">Excellent</span> — lean and direct.'; }
-  else if (score>65) { fill.style.stroke='#6366f1'; msg.innerHTML='<span style="color:#6366f1;font-weight:700">Good</span> — a few fixes will sharpen it.'; }
-  else { fill.style.stroke='#ef4444'; msg.innerHTML='<span style="color:#ef4444;font-weight:700">Needs work</span> — too much passive or filler.'; }
+function updateGauge(s){
+  const fill=document.getElementById('gFill'),num=document.getElementById('gNum'),msg=document.getElementById('scoreMsg');
+  fill.style.strokeDashoffset=204-(s/100)*204; num.textContent=s+'%';
+  if(s>85){fill.style.stroke='#22c55e';msg.innerHTML='<span style="color:#16a34a;font-weight:700">Excellent</span> — lean and direct.';}
+  else if(s>65){fill.style.stroke='#6366f1';msg.innerHTML='<span style="color:#6366f1;font-weight:700">Good</span> — a few fixes will sharpen it.';}
+  else{fill.style.stroke='#ef4444';msg.innerHTML='<span style="color:#ef4444;font-weight:700">Needs work</span> — too much passive or filler.';}
 }
 
-// ── Audience Matcher ──
-function updateAudience() {
-  const key = document.getElementById('audSelect').value;
-  const el  = document.getElementById('audResult');
-  if (!key) { el.innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Select an audience to score your copy.</p>'; return; }
-  if (!lastWords.length) { el.innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Paste copy to score against this audience.</p>'; return; }
-
-  const prof = AUDIENCES[key];
-  const sentences = lastSentences;
-  const words = lastWords;
-  const fk = lastFK;
-
-  // Score components
-  // 1. Readability match (0-40pts)
-  const [fkMin,fkMax] = prof.fk;
-  const fkClamped = Math.max(fkMin, Math.min(fkMax, fk));
-  const fkScore = Math.round(((fkClamped-fkMin)/(fkMax-fkMin||1))*40);
-
-  // 2. Avg sentence length vs target (0-30pts)
-  const avgLen = sentences.length ? words.length/sentences.length : 0;
-  const lenDiff = Math.abs(avgLen - prof.sentLen);
-  const lenScore = Math.round(Math.max(0, 30-(lenDiff*3)));
-
-  // 3. Passive/filler ratio vs tolerance (0-30pts)
-  const pCount = parseInt(document.getElementById('sPassive').innerText)||0;
-  const fCount = parseInt(document.getElementById('sFiller').innerText)||0;
-  const issueRatio = ((pCount+fCount)/(words.length||1))*100;
-  const issueScore = Math.round(Math.max(0, 30-(Math.max(0,issueRatio-prof.passive)*4)));
-
-  const total = Math.min(100, fkScore+lenScore+issueScore);
-  const col = total>=75?'#22c55e':total>=50?'#f59e0b':'#ef4444';
-  const lbl = total>=75?'Strong Match':total>=50?'Partial Match':'Poor Match';
-
-  const fkLabel = fk>=80?'Very Easy':fk>=70?'Easy':fk>=60?'Fairly Easy':fk>=50?'Standard':fk>=40?'Fairly Difficult':fk>=30?'Difficult':'Very Difficult';
-  const avgLenLabel = avgLen <= prof.sentLen ? '✓ Good' : '↑ Too long';
-
-  el.innerHTML = `
-    <div class="aud-score-row" style="margin-bottom:4px">
-      <span class="aud-score-num" style="color:${col}">${total}%</span>
-      <span style="font-size:11px;font-weight:800;color:${col}">${lbl}</span>
-    </div>
-    <div class="aud-bar-track"><div class="aud-bar-fill" style="width:${total}%;background:${col}"></div></div>
-    <div class="aud-feedback">${prof.desc}</div>
-    <div class="aud-detail" style="margin-top:10px">
-      <div class="aud-chip">
-        <div class="aud-chip-val" style="color:${fkScore>=28?'#16a34a':fkScore>=15?'#d97706':'#dc2626'}">${fkLabel}</div>
-        <div class="aud-chip-lbl">Readability</div>
-      </div>
-      <div class="aud-chip">
-        <div class="aud-chip-val" style="color:${avgLen<=prof.sentLen?'#16a34a':'#d97706'}">${Math.round(avgLen)}w ${avgLenLabel}</div>
-        <div class="aud-chip-lbl">Avg Sentence</div>
-      </div>
-    </div>`;
+function updateAudience(){
+  const key=document.getElementById('audSelect').value,el=document.getElementById('audResult');
+  if(!key){el.innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Select an audience to score your copy.</p>';return;}
+  if(!lastWords.length){el.innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Paste copy to score against this audience.</p>';return;}
+  const prof=AUDIENCES[key],[fkMin,fkMax]=prof.fk;
+  const fkScore=Math.round(((Math.max(fkMin,Math.min(fkMax,lastFK))-fkMin)/(fkMax-fkMin||1))*40);
+  const avgLen=lastSentences.length?lastWords.length/lastSentences.length:0;
+  const lenScore=Math.round(Math.max(0,30-(Math.abs(avgLen-prof.sentLen)*3)));
+  const ir=((parseInt(document.getElementById('sPassive').innerText)||0)+(parseInt(document.getElementById('sFiller').innerText)||0))/(lastWords.length||1)*100;
+  const issueScore=Math.round(Math.max(0,30-(Math.max(0,ir-prof.passive)*4)));
+  const total=Math.min(100,fkScore+lenScore+issueScore);
+  const col=total>=75?'#22c55e':total>=50?'#f59e0b':'#ef4444';
+  const lbl=total>=75?'Strong Match':total>=50?'Partial Match':'Poor Match';
+  const fkLabel=lastFK>=80?'Very Easy':lastFK>=70?'Easy':lastFK>=60?'Fairly Easy':lastFK>=50?'Standard':lastFK>=40?'Fairly Difficult':lastFK>=30?'Difficult':'Very Difficult';
+  el.innerHTML=`<div class="aud-score-row" style="margin-bottom:4px"><span class="aud-score-num" style="color:${col}">${total}%</span><span style="font-size:11px;font-weight:800;color:${col}">${lbl}</span></div><div class="aud-bar-track"><div class="aud-bar-fill" style="width:${total}%;background:${col}"></div></div><div class="aud-feedback">${prof.desc}</div><div class="aud-detail"><div class="aud-chip"><div class="aud-chip-val" style="color:${fkScore>=28?'#16a34a':fkScore>=15?'#d97706':'#dc2626'}">${fkLabel}</div><div class="aud-chip-lbl">Readability</div></div><div class="aud-chip"><div class="aud-chip-val" style="color:${avgLen<=prof.sentLen?'#16a34a':'#d97706'}">${Math.round(avgLen)}w ${avgLen<=prof.sentLen?'✓':'↑ long'}</div><div class="aud-chip-lbl">Avg Sentence</div></div></div>`;
 }
 
-// ── Readability ──
-function updateRead(score) {
-  const v=document.getElementById('readVal'), d=document.getElementById('readDesc');
-  if      (score>=80){v.innerText='Very Easy';       d.innerText='Accessible to all readers. Ideal for broad consumer campaigns.';}
-  else if (score>=70){v.innerText='Easy';             d.innerText='Clear and direct. Great for email marketing and landing pages.';}
-  else if (score>=60){v.innerText='Fairly Easy';      d.innerText='Comfortable for most adults. Good for blogs and social copy.';}
-  else if (score>=50){v.innerText='Standard';         d.innerText='Average reading level. Suitable for general B2B content.';}
-  else if (score>=40){v.innerText='Fairly Difficult'; d.innerText='Best suited to informed professional audiences.';}
-  else if (score>=30){v.innerText='Difficult';        d.innerText='Appropriate for technical or academic copy. Consider simplifying.';}
-  else               {v.innerText='Very Difficult';   d.innerText='Dense and complex. Likely to lose most readers.';}
+function updateRead(s){
+  const v=document.getElementById('readVal'),d=document.getElementById('readDesc');
+  if(s>=80){v.innerText='Very Easy';d.innerText='Accessible to all readers. Ideal for broad consumer campaigns.';}
+  else if(s>=70){v.innerText='Easy';d.innerText='Clear and direct. Great for email marketing and landing pages.';}
+  else if(s>=60){v.innerText='Fairly Easy';d.innerText='Comfortable for most adults. Good for blogs and social copy.';}
+  else if(s>=50){v.innerText='Standard';d.innerText='Average reading level. Suitable for general B2B content.';}
+  else if(s>=40){v.innerText='Fairly Difficult';d.innerText='Best suited to informed professional audiences.';}
+  else if(s>=30){v.innerText='Difficult';d.innerText='Appropriate for technical or academic copy. Consider simplifying.';}
+  else{v.innerText='Very Difficult';d.innerText='Dense and complex. Likely to lose most readers.';}
 }
 
-// ── Tone ──
-function detectTone(words) {
+function detectTone(words){
   const lc=words.map(w=>w.toLowerCase().replace(/[^a-z]/g,''));
-  const agg=lc.filter(w=>TONE_AGG.includes(w)).length, frm=lc.filter(w=>TONE_FORM.includes(w)).length, cnv=lc.filter(w=>TONE_CONV.includes(w)).length;
-  const badge=document.getElementById('toneBadge'), desc=document.getElementById('toneDesc');
+  const agg=lc.filter(w=>TONE_AGG.includes(w)).length,frm=lc.filter(w=>TONE_FORM.includes(w)).length,cnv=lc.filter(w=>TONE_CONV.includes(w)).length;
+  const badge=document.getElementById('toneBadge'),desc=document.getElementById('toneDesc');
   badge.className='tone-badge';
-  if(agg>=2)     {badge.classList.add('t-agg'); badge.innerText='🔥 Aggressive';    desc.innerText='High-energy. Great for urgency-driven ads.';}
-  else if(frm>=2){badge.classList.add('t-form');badge.innerText='📋 Formal';         desc.innerText='Professional tone. Well-suited to B2B or whitepapers.';}
-  else if(cnv>=4){badge.classList.add('t-conv');badge.innerText='💬 Conversational'; desc.innerText='Friendly and direct. Ideal for consumer-facing copy.';}
-  else           {badge.classList.add('t-neut');badge.innerText='⚖️ Neutral';         desc.innerText='Balanced tone. Consider sharpening for your audience.';}
+  if(agg>=2){badge.classList.add('t-agg');badge.innerText='🔥 Aggressive';desc.innerText='High-energy. Great for urgency-driven ads.';}
+  else if(frm>=2){badge.classList.add('t-form');badge.innerText='📋 Formal';desc.innerText='Professional tone. Well-suited to B2B or whitepapers.';}
+  else if(cnv>=4){badge.classList.add('t-conv');badge.innerText='💬 Conversational';desc.innerText='Friendly and direct. Ideal for consumer-facing copy.';}
+  else{badge.classList.add('t-neut');badge.innerText='⚖️ Neutral';desc.innerText='Balanced tone. Consider sharpening for your audience.';}
 }
 
-// ── Sentence Variety ──
-function updateVariety(sentences, issues) {
+function updateVariety(sentences,issues){
   const el=document.getElementById('varietyBlock');
   if(sentences.length<2){el.innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Need 2+ sentences to analyse.</p>';return;}
-  const total=sentences.length, ic=issues.size;
-  const score=Math.round(((total-ic)/total)*100);
+  const total=sentences.length,ic=issues.size,score=Math.round(((total-ic)/total)*100);
   const col=score>=80?'#22c55e':score>=60?'#f59e0b':'#ef4444';
   const lens=sentences.map(s=>s.trim().split(/\s+/).filter(w=>w.length>0).length);
-  const sh=lens.filter(l=>l<=10).length, md=lens.filter(l=>l>10&&l<=20).length, lg=lens.filter(l=>l>20).length;
-  const fb=ic===0?'Great variety — no consecutive same-start sentences.':`${ic} sentence${ic>1?'s':''} start${ic===1?'s':''} the same way as the previous one (pink highlight).`;
-  el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-      <span style="font-size:22px;font-weight:900;color:${col}">${score}%</span>
-      <span style="font-size:10px;color:#aaa">${ic} issue${ic!==1?'s':''}</span>
-    </div>
-    <div class="variety-track"><div class="variety-fill" style="width:${score}%;background:${col}"></div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:9px 0">
-      ${[['Short',sh],['Medium',md],['Long',lg]].map(([l,n])=>`<div style="text-align:center;background:#f8fafc;border-radius:8px;padding:7px 4px"><div style="font-size:15px;font-weight:900;color:#555">${n}</div><div style="font-size:9px;color:#bbb;font-weight:700;text-transform:uppercase;margin-top:2px">${l}</div></div>`).join('')}
-    </div>
-    <p style="font-size:11px;color:#888;line-height:1.55">${fb}</p>`;
+  const sh=lens.filter(l=>l<=10).length,md=lens.filter(l=>l>10&&l<=20).length,lg=lens.filter(l=>l>20).length;
+  const fb=ic===0?'Great variety — no consecutive same-start sentences.':`${ic} sentence${ic>1?'s':''} start the same way as the previous one (pink highlight).`;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:22px;font-weight:900;color:${col}">${score}%</span><span style="font-size:10px;color:#aaa">${ic} issue${ic!==1?'s':''}</span></div><div class="variety-track"><div class="variety-fill" style="width:${score}%;background:${col}"></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:9px 0">${[['Short',sh],['Medium',md],['Long',lg]].map(([l,n])=>`<div style="text-align:center;background:#f8fafc;border-radius:8px;padding:7px 4px"><div style="font-size:15px;font-weight:900;color:#555">${n}</div><div style="font-size:9px;color:#bbb;font-weight:700;text-transform:uppercase;margin-top:2px">${l}</div></div>`).join('')}</div><p style="font-size:11px;color:#888;line-height:1.55">${fb}</p>`;
 }
 
-// ── CTA ──
-function detectCTA(text) {
-  const lower=text.toLowerCase();
-  const found=CTA_PHRASES.filter(p=>lower.includes(p));
+function detectCTA(text){
+  const lower=text.toLowerCase(),found=CTA_PHRASES.filter(p=>lower.includes(p));
   const el=document.getElementById('ctaBlock');
   if(found.length>0){
     const str=found.length>=3?'💪 Strong':found.length===2?'👍 Good':'⚠️ Weak';
     el.innerHTML=`<div class="cta-found"><div style="font-weight:800;margin-bottom:4px">${str} CTA Detected</div><div>Found: ${found.map(p=>`<strong>"${p}"</strong>`).join(', ')}</div>${found.length===1?'<div style="margin-top:5px;opacity:.8">Consider adding a secondary CTA for reinforcement.</div>':''}</div>`;
-  } else {
+  }else{
     el.innerHTML=`<div class="cta-missing"><div style="font-weight:800;margin-bottom:4px">⚠️ No CTA Detected</div><div>Your copy lacks a clear call to action. Try <strong>"Get started"</strong>, <strong>"Book a demo"</strong> or <strong>"Sign up free"</strong>.</div></div>`;
   }
 }
 
-// ── Keywords ──
-function updateKW(words, text) {
-  const total=words.length;
-  const tkw=document.getElementById('targetKW').value.trim().toLowerCase();
-  const res=document.getElementById('targetKWResult');
+function updateKW(words,text){
+  const total=words.length,tkw=document.getElementById('targetKW').value.trim().toLowerCase(),res=document.getElementById('targetKWResult');
   if(tkw&&total>0){
     const re=new RegExp(`\\b${tkw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`,'gi');
-    const count=(text.match(re)||[]).length, pct=count/total*100, ps=pct.toFixed(2)+'%';
-    const cls=pct>=2.5?'s-high':pct>=1.5?'s-opt':'s-low';
-    const lbl=pct>=2.5?'🔴 Too High':pct>=1.5?'🟢 Optimal':'🟡 Too Low';
+    const count=(text.match(re)||[]).length,pct=count/total*100,ps=pct.toFixed(2)+'%';
+    const cls=pct>=2.5?'s-high':pct>=1.5?'s-opt':'s-low',lbl=pct>=2.5?'🔴 Too High':pct>=1.5?'🟢 Optimal':'🟡 Too Low';
     const advice=pct>=2.5?'Reduce usage — may trigger keyword stuffing.':pct>=1.5?'Perfect range for SEO.':count===0?'Keyword not found in your copy.':'Increase usage to improve SEO relevance.';
     res.innerHTML=`<div class="kw-row ${cls}" style="background:#fafafa;border:1.5px solid #e5e5e5;border-radius:9px;padding:11px 13px"><div class="kw-meta" style="margin-bottom:5px"><span class="kw-word" style="font-size:13px">"${tkw}"</span><span class="kw-right" style="font-size:12px">${ps} <span class="kw-badge">${lbl}</span></span></div><div class="kw-track" style="margin-bottom:7px"><div class="kw-bar" style="width:${Math.min(100,pct*18)}%"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:#aaa"><span>Found <strong style="color:#333">${count}×</strong> / ${total} words</span><span style="text-align:right;max-width:55%">${advice}</span></div></div>`;
-  } else { res.innerHTML=tkw?'<p style="font-size:11px;color:#ccc;font-style:italic">Paste copy to measure density.</p>':''; }
-
+  }else{ res.innerHTML=tkw?'<p style="font-size:11px;color:#ccc;font-style:italic">Paste copy to measure density.</p>':''; }
   const freq={};
   words.forEach(w=>{const c=w.toLowerCase().replace(/[^a-z]/g,'');if(c.length>3&&!FILLERS.includes(c)&&!STOP.has(c))freq[c]=(freq[c]||0)+1;});
   const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,5);
@@ -723,184 +664,120 @@ function updateKW(words, text) {
   }).join(''):'<p style="font-size:11px;color:#ccc;font-style:italic">No keywords yet.</p>';
 }
 
-// ── Version Diff ──────────────────────────────────────────────────────────────
-function runDiff() {
-  const oldText = document.getElementById('diffInput').value.trim();
-  const newText = editor.value.trim();
-  if (!oldText || !newText) { showToast('⚠️ Paste a previous version into the diff box first'); return; }
-
-  const oldWords = oldText.split(/\s+/).filter(w=>w.length>0);
-  const newWords = newText.split(/\s+/).filter(w=>w.length>0);
-
-  const diffResult = runDiffAlgo(oldWords, newWords);
-
-  let html='', added=0, removed=0;
-  for (const tok of diffResult) {
-    if      (tok.type==='add') { html+=`<span class="d-add">${esc(tok.word)}</span> `; added++; }
-    else if (tok.type==='rem') { html+=`<span class="d-rem">${esc(tok.word)}</span> `; removed++; }
-    else                       { html+=esc(tok.word)+' '; }
-  }
-
-  const oldScore = calcScore(oldText);
-  const newScore = lastScore;
-  const scoreDiff = newScore - oldScore;
-  const scoreSign = scoreDiff>=0?'+':'';
-
-  const out = document.getElementById('diffOutput');
-  out.innerHTML = html.trim();
-  out.classList.add('has-content');
-
-  const sum = document.getElementById('diffSummary');
-  sum.style.display='flex';
-  sum.innerHTML=`
-    <span class="diff-chip diff-chip-add">+${added} added</span>
-    <span class="diff-chip diff-chip-rem">${removed} removed</span>
-    <span class="diff-chip diff-chip-score">Score: ${oldScore}% → ${newScore}% (${scoreSign}${scoreDiff}pts)</span>`;
-}
-
-// ── Myers diff — O(ND) algorithm, no word cap ──────────────────────────────
-function runDiffAlgo(oldW, newW) {
-  const N = oldW.length, M = newW.length;
-  if (N === 0) return newW.map(w=>({type:'add',word:w}));
-  if (M === 0) return oldW.map(w=>({type:'rem',word:w}));
-
-  const MAX = N + M;
-  const v = new Int32Array(2 * MAX + 2);
-  const trace = [];
-
-  outer: for (let d = 0; d <= MAX; d++) {
-    const snap = new Int32Array(v);
-    trace.push(snap);
-    for (let k = -d; k <= d; k += 2) {
-      const ki = k + MAX;
-      let x;
-      if (k === -d || (k !== d && v[ki - 1] < v[ki + 1])) {
-        x = v[ki + 1];
-      } else {
-        x = v[ki - 1] + 1;
-      }
-      let y = x - k;
-      while (x < N && y < M && oldW[x] === newW[y]) { x++; y++; }
-      v[ki] = x;
-      if (x >= N && y >= M) break outer;
+// ── Myers Diff ────────────────────────────────────────────────────────────────
+function runDiffAlgo(oldW,newW){
+  const N=oldW.length,M=newW.length;
+  if(N===0) return newW.map(w=>({type:'add',word:w}));
+  if(M===0) return oldW.map(w=>({type:'rem',word:w}));
+  const MAX=N+M,v=new Int32Array(2*MAX+2),trace=[];
+  outer:for(let d=0;d<=MAX;d++){
+    trace.push(new Int32Array(v));
+    for(let k=-d;k<=d;k+=2){
+      const ki=k+MAX; let x;
+      if(k===-d||(k!==d&&v[ki-1]<v[ki+1])) x=v[ki+1]; else x=v[ki-1]+1;
+      let y=x-k;
+      while(x<N&&y<M&&oldW[x]===newW[y]){x++;y++;}
+      v[ki]=x; if(x>=N&&y>=M) break outer;
     }
   }
-
-  // Backtrack
-  const result = [];
-  let x = N, y = M;
-  for (let d = trace.length - 1; d >= 0 && (x > 0 || y > 0); d--) {
-    const snap = trace[d];
-    const ki = (x - y) + MAX;
-    let px, py;
-    if (d === 0) { px = 0; py = 0; }
-    else if ((x - y) === -d || ((x - y) !== d && snap[ki - 1] < snap[ki + 1])) {
-      px = snap[ki + 1]; py = px - ((x - y) + 1);
-    } else {
-      px = snap[ki - 1]; py = px - ((x - y) - 1);
-    }
-    while (x > px && y > py) { result.unshift({type:'same',word:oldW[x-1]}); x--; y--; }
-    if (d > 0) {
-      if (x > px)      { result.unshift({type:'rem',word:oldW[x-1]}); x--; }
-      else if (y > py) { result.unshift({type:'add',word:newW[y-1]}); y--; }
-    }
+  const result=[]; let x=N,y=M;
+  for(let d=trace.length-1;d>=0&&(x>0||y>0);d--){
+    const snap=trace[d],ki=(x-y)+MAX; let px,py;
+    if(d===0){px=0;py=0;}
+    else if((x-y)===-d||((x-y)!==d&&snap[ki-1]<snap[ki+1])){px=snap[ki+1];py=px-((x-y)+1);}
+    else{px=snap[ki-1];py=px-((x-y)-1);}
+    while(x>px&&y>py){result.unshift({type:'same',word:oldW[x-1]});x--;y--;}
+    if(d>0){if(x>px){result.unshift({type:'rem',word:oldW[x-1]});x--;}else if(y>py){result.unshift({type:'add',word:newW[y-1]});y--;}}
   }
   return result;
 }
 
-function calcScore(text) {
-  const words=text.trim().split(/\s+/).filter(w=>w.length>0);
-  if(!words.length) return 0;
+function runDiff(){
+  const oldText=document.getElementById('diffInput').value.trim(),newText=ta.value.trim();
+  if(!oldText||!newText){showToast('⚠️ Paste a previous version into the diff box first');return;}
+  const oldWords=oldText.split(/\s+/).filter(w=>w.length>0),newWords=newText.split(/\s+/).filter(w=>w.length>0);
+  const dr=runDiffAlgo(oldWords,newWords);
+  let html='',added=0,removed=0;
+  for(const tok of dr){
+    if(tok.type==='add'){html+=`<span class="d-add">${esc(tok.word)}</span> `;added++;}
+    else if(tok.type==='rem'){html+=`<span class="d-rem">${esc(tok.word)}</span> `;removed++;}
+    else html+=esc(tok.word)+' ';
+  }
+  const oldScore=calcScore(oldText),diff=lastScore-oldScore,sign=diff>=0?'+':'';
+  const out=document.getElementById('diffOutput');
+  out.innerHTML=html.trim(); out.classList.add('has-content');
+  const sum=document.getElementById('diffSummary');
+  sum.style.display='flex';
+  sum.innerHTML=`<span class="diff-chip diff-chip-add">+${added} added</span><span class="diff-chip diff-chip-rem">${removed} removed</span><span class="diff-chip diff-chip-score">Score: ${oldScore}% → ${lastScore}% (${sign}${diff}pts)</span>`;
+}
+
+function calcScore(text){
+  const words=text.trim().split(/\s+/).filter(w=>w.length>0); if(!words.length) return 0;
   const pr=new RegExp(PASSIVE_RE.source,'gi');
-  let p=(text.match(pr)||[]).length, f=0;
+  let p=(text.match(pr)||[]).length,f=0;
   FILLERS.forEach(w=>{f+=(text.match(new RegExp(`\\b${w}\\b`,'gi'))||[]).length;});
   return Math.max(0,100-Math.round(((p*5)+(f*2))/(words.length)*100));
 }
 
-// ── Persistence — localStorage with graceful fallback ────────────────────────
-const STORAGE_KEY = 'copyengine_v6';
-
-function persistLoad() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const data = JSON.parse(raw);
-    if (data.editorText) {
-      editor.value = data.editorText;
-      analyse();
-    }
-    if (data.targetKW) {
-      document.getElementById('targetKW').value = data.targetKW;
-      analyse();
-    }
-    if (data.audSelect) {
-      document.getElementById('audSelect').value = data.audSelect;
-      updateAudience();
-    }
-    if (data.drafts) {
-      drafts = data.drafts;
-      renderDrafts();
-    }
-    if (data.diffInput) {
-      document.getElementById('diffInput').value = data.diffInput;
-    }
-    if (data.editorText) showToast('↩ Progress restored');
-  } catch(e) { /* localStorage unavailable in this environment */ }
+function fixAllFillers(){
+  let t=ta.value; if(!t.trim()) return;
+  FILLERS.forEach(w=>{t=t.replace(new RegExp(`\\s?\\b${w}\\b\\s?`,'gi'),' ');});
+  ta.value=t.replace(/ {2,}/g,' ').replace(/ ([.,!?;:])/g,'$1').trim();
+  onEditorInput();
 }
 
-function persistSave() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      editorText: editor.value,
-      targetKW:   document.getElementById('targetKW').value,
-      audSelect:  document.getElementById('audSelect').value,
-      diffInput:  document.getElementById('diffInput').value,
-      drafts:     drafts.slice(0, 3),
-    }));
-  } catch(e) { /* silently fail if storage unavailable */ }
-}
-
-// Attach persist to all inputs
-editor.addEventListener('input', persistSave);
-document.getElementById('targetKW').addEventListener('input', persistSave);
-document.getElementById('audSelect').addEventListener('change', persistSave);
-document.getElementById('diffInput').addEventListener('input', persistSave);
-
-// Load on startup
-window.addEventListener('DOMContentLoaded', persistLoad);
+// ── Autosave drafts ───────────────────────────────────────────────────────────
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveDraft,3000); }
 function saveDraft(){
-  const text=editor.value.trim(); if(!text) return;
+  const text=ta.value.trim(); if(!text) return;
   drafts.unshift({text,preview:text.slice(0,42).replace(/\n/g,' ')+(text.length>42?'…':''),time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),score:lastScore});
   if(drafts.length>3) drafts.pop();
-  renderDrafts(); showToast('✓ Draft saved');
+  renderDrafts(); persistSave(); showToast('✓ Draft saved');
 }
 function renderDrafts(){
-  const el=document.getElementById('draftList');
-  el.innerHTML=drafts.length?drafts.map((d,i)=>`<div class="draft-item" onclick="restoreDraft(${i})"><div><div class="draft-meta">${d.preview}</div><div class="draft-time">Saved at ${d.time}</div></div><div class="draft-score">${d.score}%</div></div>`).join(''):'<p style="font-size:11px;color:#ccc;font-style:italic">No drafts yet.</p>';
+  document.getElementById('draftList').innerHTML=drafts.length
+    ?drafts.map((d,i)=>`<div class="draft-item" onclick="restoreDraft(${i})"><div><div class="draft-meta">${d.preview}</div><div class="draft-time">Saved at ${d.time}</div></div><div class="draft-score">${d.score}%</div></div>`).join('')
+    :'<p style="font-size:11px;color:#ccc;font-style:italic">No drafts yet.</p>';
 }
 function restoreDraft(i){
   if(!drafts[i]) return;
-  editor.value=drafts[i].text; overlay.scrollTop=0; editor.scrollTop=0;
-  analyse(); showToast('↩ Draft restored');
+  ta.value=drafts[i].text;
+  onEditorInput(); showToast('↩ Draft restored');
 }
 
-function showToast(msg){ const t=document.getElementById('toast'); t.innerText=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
-
-function fixAllFillers(){
-  if(!editor.value.trim()) return;
-  let t=editor.value;
-  FILLERS.forEach(w=>{t=t.replace(new RegExp(`\\s?\\b${w}\\b\\s?`,'gi'),' ');});
-  editor.value=t.replace(/ {2,}/g,' ').replace(/ ([.,!?;:])/g,'$1').trim();
-  analyse();
+// ── Persistence ───────────────────────────────────────────────────────────────
+function persistSave(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({
+      editorText:ta.value,
+      targetKW:document.getElementById('targetKW').value,
+      audSelect:document.getElementById('audSelect').value,
+      diffInput:document.getElementById('diffInput').value,
+      drafts:drafts.slice(0,3),
+    }));
+  }catch(e){}
+}
+function persistLoad(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+    const data=JSON.parse(raw);
+    if(data.editorText) ta.value=data.editorText;
+    if(data.targetKW)   document.getElementById('targetKW').value=data.targetKW;
+    if(data.audSelect)  document.getElementById('audSelect').value=data.audSelect;
+    if(data.diffInput)  document.getElementById('diffInput').value=data.diffInput;
+    if(data.drafts)     { drafts=data.drafts; renderDrafts(); }
+    if(data.editorText){ onEditorInput(); showToast('↩ Progress restored'); }
+  }catch(e){}
 }
 
 function resetUI(){
-  overlay.innerHTML=''; lastWords=[]; lastSentences=[];
+  ov.innerHTML='';
   ['sPassive','sFiller','sCliche','sRepeat','sWords','sChars'].forEach(id=>document.getElementById(id).innerText='0');
   const fill=document.getElementById('gFill'); fill.style.strokeDashoffset='0'; fill.style.stroke='#e5e5e5';
   document.getElementById('gNum').innerText='—';
   document.getElementById('scoreMsg').innerText='Paste copy to begin.';
-  document.getElementById('readVal').innerText='—'; document.getElementById('readDesc').innerText='Paste text to calculate.';
+  document.getElementById('readVal').innerText='—';
+  document.getElementById('readDesc').innerText='Paste text to calculate.';
   document.getElementById('kwList').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">No keywords yet.</p>';
   document.getElementById('targetKWResult').innerHTML='';
   document.getElementById('ctaBlock').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Paste text to detect.</p>';
@@ -909,10 +786,10 @@ function resetUI(){
   document.getElementById('audResult').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Select an audience to score your copy.</p>';
 }
 
-// ── AI Audit ──
+// ── AI Audit ──────────────────────────────────────────────────────────────────
 async function runAIAudit(){
-  const text=editor.value.trim(); if(!text){alert('Please paste some copy first.');return;}
-  const panel=document.getElementById('aiPanel'), out=document.getElementById('aiOutput');
+  const text=ta.value.trim(); if(!text){alert('Please paste some copy first.');return;}
+  const panel=document.getElementById('aiPanel'),out=document.getElementById('aiOutput');
   panel.classList.add('open');
   setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
   out.innerHTML='<div class="loading-wrap"><div class="spinner"></div><p>Analysing your copy…</p></div>';
@@ -940,18 +817,21 @@ function renderAI(r,original){
     <div class="ai-section"><h4>✨ Before vs After</h4>${ba}</div>`;
 }
 
-// ── Exports ──
+function showToast(msg){ const t=document.getElementById('toast'); t.innerText=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
 function downloadHTML(){
   const blob=new Blob([document.documentElement.outerHTML],{type:'text/html;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`CopyEngine_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href);
   showToast('✓ HTML downloaded');
 }
 function downloadPDF(){
-  const panel=document.getElementById('aiPanel'), wasOpen=panel.classList.contains('open');
+  const panel=document.getElementById('aiPanel'),wasOpen=panel.classList.contains('open');
   panel.classList.remove('open');
   html2pdf().set({margin:0.35,filename:`CopyAudit_${Date.now()}.pdf`,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'in',format:'a4',orientation:'portrait'}})
   .from(document.getElementById('reportContent')).save().then(()=>{if(wasOpen)panel.classList.add('open');});
 }
+
+window.addEventListener('DOMContentLoaded', persistLoad);
 </script>
 </body>
 </html>
