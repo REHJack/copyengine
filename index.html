@@ -239,7 +239,7 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
         <button class="toggle-pill active" data-mode="filler"   onclick="toggleMode(this)">🟡 Fillers</button>
         <button class="toggle-pill active" data-mode="sentence" onclick="toggleMode(this)">🟠 Long Sentences</button>
         <button class="toggle-pill active" data-mode="cliche"   onclick="toggleMode(this)">🟣 Clichés</button>
-        <button class="toggle-pill active" data-mode="repeat"   onclick="toggleMode(this)">🔵 Repetition</button>
+        <button class="toggle-pill active" data-mode="repeat"   onclick="toggleMode(this)">🔵 Echoes</button>
         <button class="toggle-pill active" data-mode="variety"  onclick="toggleMode(this)">🩷 Variety</button>
       </div>
 
@@ -254,7 +254,7 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
             <div class="leg-item"><div class="leg-dot" style="background:#fef08a;border:1px solid #eab308"></div>Filler</div>
             <div class="leg-item"><div class="leg-dot" style="background:#fed7aa;border:1px solid #f97316"></div>Long</div>
             <div class="leg-item"><div class="leg-dot" style="background:#e9d5ff;border:1px solid #a855f7"></div>Cliché</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#bfdbfe;border:1px solid #3b82f6"></div>Repeat</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#bfdbfe;border:1px solid #3b82f6"></div>Echo</div>
             <div class="leg-item"><div class="leg-dot" style="background:#fce7f3;border:1px solid #ec4899"></div>Variety</div>
           </div>
           <div id="readingTime" style="font-size:10px;color:#bbb;font-weight:700">— min read</div>
@@ -265,7 +265,7 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
         <div class="stat"><div class="stat-label">Passive</div><div class="stat-val c-red"  id="sPassive">0</div></div>
         <div class="stat"><div class="stat-label">Fillers</div><div class="stat-val c-amber" id="sFiller">0</div></div>
         <div class="stat"><div class="stat-label">Clichés</div><div class="stat-val" style="color:#a855f7" id="sCliche">0</div></div>
-        <div class="stat"><div class="stat-label">Repeats</div><div class="stat-val c-blue"  id="sRepeat">0</div></div>
+        <div class="stat"><div class="stat-label">Echoes</div><div class="stat-val c-blue"  id="sRepeat">0</div></div>
         <div class="stat"><div class="stat-label">Words</div><div class="stat-val c-violet"  id="sWords">0</div></div>
         <div class="stat"><div class="stat-label">Chars</div><div class="stat-val c-slate"   id="sChars">0</div></div>
       </div>
@@ -319,6 +319,10 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
         <div class="card-title">Readability</div>
         <div class="read-val" id="readVal">—</div>
         <div class="read-desc" id="readDesc">Paste text to calculate.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">
+          <div class="aud-chip"><div class="aud-chip-val" id="fkglVal">—</div><div class="aud-chip-lbl">Grade Level</div></div>
+          <div class="aud-chip"><div class="aud-chip-val" id="fresVal">—</div><div class="aud-chip-lbl">Reading Ease</div></div>
+        </div>
         <hr class="divider-line">
         <div class="card-title" style="margin-bottom:7px">Tone</div>
         <span class="tone-badge t-neut" id="toneBadge">Neutral</span>
@@ -360,7 +364,7 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
         <ul class="tip-list">
           <li><span>→</span><span>Target <strong>1.5–2.5%</strong> keyword density.</span></li>
           <li><span>→</span><span>Click <strong style="color:#fca5a5">red</strong> or <strong style="color:#c4b5fd">purple</strong> highlights for fix suggestions.</span></li>
-          <li><span>→</span><span><strong style="color:#93c5fd">Blue</strong> = word repeated too close together.</span></li>
+          <li><span>→</span><span><strong style="color:#93c5fd">Blue</strong> = echoed phrases — similar openings or transitions repeated nearby.</span></li>
           <li><span>→</span><span><strong style="color:#f9a8d4">Pink</strong> = consecutive sentences starting the same way.</span></li>
           <li><span>→</span><span>Keep sentences <strong>under 30 words</strong> for maximum punch.</span></li>
         </ul>
@@ -384,12 +388,12 @@ const TONE_AGG  = ['crush','dominate','destroy','kill','smash','win','beat','att
 const TONE_FORM = ['furthermore','therefore','henceforth','pursuant','accordingly','notwithstanding','herein','whereas','thereby','wherein'];
 const TONE_CONV = ['you','your','we','our','hey','awesome','great','love','easy','quick','simple','fun','together','discover','imagine'];
 const AUDIENCES = {
-  general:      {fk:[70,100],passive:3, filler:5, sentLen:18,desc:'Short sentences, plain English, conversational tone.'},
-  consumer:     {fk:[65,100],passive:4, filler:6, sentLen:20,desc:'Benefit-led, punchy, emotionally engaging.'},
-  professional: {fk:[50,75], passive:6, filler:4, sentLen:24,desc:'Clear and structured. Some industry terminology is fine.'},
-  csuite:       {fk:[45,70], passive:5, filler:3, sentLen:22,desc:'Concise, outcome-focused, credible. No fluff.'},
-  technical:    {fk:[30,60], passive:7, filler:3, sentLen:28,desc:'Precise language, detail-rich, jargon acceptable.'},
-  academic:     {fk:[0,45],  passive:15,filler:2, sentLen:35,desc:'Formal, evidence-based, complex structure tolerated.'},
+  general:      {fk:[70,100],passive:3, filler:5, sentLen:18,desc:'Short sentences, plain English, conversational tone. Aim for GCSE reading level or below.'},
+  consumer:     {fk:[65,100],passive:4, filler:6, sentLen:20,desc:'Benefit-led, punchy, emotionally engaging. Accessible to secondary school readers.'},
+  professional: {fk:[50,70], passive:6, filler:4, sentLen:24,desc:'Clear and structured. Some industry terminology is fine. A-Level to undergraduate level.'},
+  csuite:       {fk:[50,70], passive:5, filler:3, sentLen:22,desc:'Concise, outcome-focused, credible. No fluff. Plain English with authority.'},
+  technical:    {fk:[30,60], passive:7, filler:3, sentLen:28,desc:'Precise language, detail-rich, specialist terminology acceptable. Undergraduate level.'},
+  academic:     {fk:[0,45],  passive:15,filler:2, sentLen:35,desc:'Formal, evidence-based, complex structure tolerated. Postgraduate level.'},
 };
 
 const modes={passive:true,filler:true,sentence:true,cliche:true,repeat:true,variety:true};
@@ -404,17 +408,15 @@ ta.addEventListener('scroll', syncScroll);
 // ── Sync overlay height to textarea content height ────────────────────────────
 let lastHeight = 420;
 function syncHeight(){
-  // Temporarily set height to 0 to get true scrollHeight, but do it
-  // off the visual frame by reading scrollHeight without collapsing to 'auto'.
-  // We only grow or shrink — never reset to auto which causes cursor jumps.
-  const scroll = ta.scrollHeight;
-  const h = Math.max(420, scroll);
-  if (h !== lastHeight) {
-    lastHeight = h;
-    ta.style.height = h + 'px';
-    ov.style.height  = h + 'px';
-    ta.closest('.editor-wrap').style.minHeight = h + 'px';
-  }
+  // Temporarily collapse to measure true content height, then restore
+  const scrollPos = ta.scrollTop;
+  ta.style.height = '0px';
+  const h = Math.max(420, ta.scrollHeight);
+  ta.style.height = h + 'px';
+  ov.style.height  = h + 'px';
+  ta.closest('.editor-wrap').style.minHeight = h + 'px';
+  ta.scrollTop = scrollPos; // preserve scroll position
+  lastHeight = h;
 }
 
 // ── Main input handler ────────────────────────────────────────────────────────
@@ -602,16 +604,72 @@ function analyse(){
   document.getElementById('readingTime').innerText =
     Math.ceil(lastWords.length/238)<=1?'< 1 min read':`${Math.ceil(lastWords.length/238)} min read`;
 
-  // Repetition
-  const wsMap={};
-  lastSentences.forEach((s,si)=>{
-    s.toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/)
-      .filter(w=>w.length>4&&!STOP.has(w)&&!FILLERS.includes(w))
-      .forEach(w=>{ if(!wsMap[w]) wsMap[w]=[]; wsMap[w].push(si); });
+  // Repetition — phrase echo detection
+  // 1. Opening phrase echoes: sentences within 3 positions sharing 2+ word openings
+  // 2. Transitional phrase echoes: repeated mid-sentence phrases within 3 positions
+  const COMMON_OPENERS = new Set(['it is','it was','there is','there are','there was','this is','that is','i am','i have','we are','we have','you can','you will','they are','they have','he is','she is','in the','on the','at the','for the','to the','of the','and the','but the','from the','with the','by the']);
+  const TRANSITION_PHRASES = ['this means that','this is because','this is why','this allows','this ensures','this enables','this helps','this makes','this provides','as a result','in addition to','on top of','in order to','due to the','because of the','as well as','not only','it also','you also','we also','they also','this also','which means','which allows','which enables','which ensures','which makes','which helps','which provides'];
+
+  // Extract opening phrases (first 2 and 3 words) for each sentence
+  const openerMap = lastSentences.map(s => {
+    const words = s.trim().split(/\s+/).map(w => w.toLowerCase().replace(/[^a-z']/g, '')).filter(w => w.length > 0);
+    return {
+      two: words.slice(0, 2).join(' '),
+      three: words.slice(0, 3).join(' ')
+    };
   });
-  const repeatSet=new Set(); let repeatCount=0;
-  Object.entries(wsMap).forEach(([w,idxs])=>{
-    for(let i=1;i<idxs.length;i++) if(idxs[i]-idxs[i-1]<=2){ repeatSet.add(w); repeatCount++; break; }
+
+  const repeatSet = new Set(); // stores sentence indices with echo issues
+  const repeatPhrases = {}; // maps sentence index to the echoed phrase for tooltips
+  let repeatCount = 0;
+
+  // Check for opening phrase echoes within 3 sentences
+  for (let i = 0; i < openerMap.length; i++) {
+    for (let j = i + 1; j <= Math.min(i + 3, openerMap.length - 1); j++) {
+      // Check 3-word match first (stronger signal), then 2-word
+      let matched = null;
+      if (openerMap[i].three && openerMap[j].three && openerMap[i].three === openerMap[j].three && openerMap[i].three.split(' ').length === 3) {
+        matched = openerMap[i].three;
+      } else if (openerMap[i].two && openerMap[j].two && openerMap[i].two === openerMap[j].two && !COMMON_OPENERS.has(openerMap[i].two)) {
+        matched = openerMap[i].two;
+      }
+      if (matched) {
+        if (!repeatSet.has(i)) { repeatSet.add(i); repeatCount++; repeatPhrases[i] = matched; }
+        if (!repeatSet.has(j)) { repeatSet.add(j); repeatCount++; repeatPhrases[j] = matched; }
+      }
+    }
+  }
+
+  // Check for transitional phrase echoes within 3 sentences
+  const transitionHits = {}; // phrase -> [sentenceIndices]
+  lastSentences.forEach((s, si) => {
+    const lower = s.toLowerCase();
+    for (const phrase of TRANSITION_PHRASES) {
+      if (lower.includes(phrase)) {
+        if (!transitionHits[phrase]) transitionHits[phrase] = [];
+        transitionHits[phrase].push(si);
+      }
+    }
+  });
+
+  const transitionEchoes = {}; // maps {sentenceIndex -> [{phrase, startInSentence, endInSentence}]}
+  Object.entries(transitionHits).forEach(([phrase, indices]) => {
+    for (let i = 0; i < indices.length; i++) {
+      for (let j = i + 1; j < indices.length; j++) {
+        if (indices[j] - indices[i] <= 3) {
+          // Both sentences echo this transitional phrase
+          [indices[i], indices[j]].forEach(si => {
+            if (!transitionEchoes[si]) transitionEchoes[si] = [];
+            const lower = lastSentences[si].toLowerCase();
+            const idx = lower.indexOf(phrase);
+            if (idx !== -1) {
+              transitionEchoes[si].push({phrase, start: idx, end: idx + phrase.length});
+            }
+            if (!repeatSet.has(si)) { repeatSet.add(si); repeatCount++; }
+          });
+        }
+      }
+    }
   });
 
   // Variety
@@ -665,10 +723,22 @@ function analyse(){
       while((m=re.exec(sent))!==null){ counters.c++; inlineHighlights.push({start:offset+m.index, end:offset+m.index+m[0].length, cls:'ch', tip}); }
     });
 
-    if(modes.repeat) repeatSet.forEach(w=>{
-      const re=new RegExp(`\\b${w}\\b`,'gi'); let m;
-      while((m=re.exec(sent))!==null) inlineHighlights.push({start:offset+m.index, end:offset+m.index+m[0].length, cls:'rh', tip:'Repeated nearby — try a synonym'});
-    });
+    // Repetition — opening phrase echoes
+    if(modes.repeat && repeatPhrases[si] !== undefined) {
+      const phrase = repeatPhrases[si];
+      const lowerSent = sent.toLowerCase();
+      const idx = lowerSent.indexOf(phrase);
+      if (idx !== -1) {
+        inlineHighlights.push({start:offset+idx, end:offset+idx+phrase.length, cls:'rh', tip:'Opening phrase echoed in a nearby sentence — try varying your sentence starts'});
+      }
+    }
+
+    // Repetition — transitional phrase echoes
+    if(modes.repeat && transitionEchoes[si]) {
+      for (const te of transitionEchoes[si]) {
+        inlineHighlights.push({start:offset+te.start, end:offset+te.end, cls:'rh', tip:`"${te.phrase}" repeated nearby — try restructuring one of these sentences`});
+      }
+    }
 
     if(modes.passive){
       const pr=new RegExp(PASSIVE_RE.source,'gi'); let m;
@@ -762,8 +832,12 @@ function analyse(){
   updateGauge(lastScore);
 
   const sylls=lastWords.reduce((a,w)=>a+countSylls(w),0);
-  lastFK=206.835-(1.015*(lastWords.length/(lastSentences.length||1)))-(84.6*(sylls/(lastWords.length||1)));
-  updateRead(lastFK);
+  const avgSentLen = lastWords.length/(lastSentences.length||1);
+  const avgSylls = sylls/(lastWords.length||1);
+  lastFK=206.835-(1.015*avgSentLen)-(84.6*avgSylls);
+  // Flesch-Kincaid Grade Level (from 1975 Navy recalibration)
+  const fkgl = (0.39*avgSentLen) + (11.8*avgSylls) - 15.59;
+  updateRead(lastFK, fkgl);
   detectTone(lastWords);
   updateVariety(lastSentences,varietyIssues);
   detectCTA(text);
@@ -792,19 +866,61 @@ function updateAudience(){
   const total=Math.min(100,fkScore+lenScore+issueScore);
   const col=total>=75?'#22c55e':total>=50?'#f59e0b':'#ef4444';
   const lbl=total>=75?'Strong Match':total>=50?'Partial Match':'Poor Match';
-  const fkLabel=lastFK>=80?'Very Easy':lastFK>=70?'Easy':lastFK>=60?'Fairly Easy':lastFK>=50?'Standard':lastFK>=40?'Fairly Difficult':lastFK>=30?'Difficult':'Very Difficult';
+  const fkLabel=lastFK>=90?'Very Easy':lastFK>=80?'Easy':lastFK>=70?'Fairly Easy':lastFK>=60?'Plain English':lastFK>=50?'Fairly Difficult':lastFK>=30?'Difficult':'Very Difficult';
   el.innerHTML=`<div class="aud-score-row" style="margin-bottom:4px"><span class="aud-score-num" style="color:${col}">${total}%</span><span style="font-size:11px;font-weight:800;color:${col}">${lbl}</span></div><div class="aud-bar-track"><div class="aud-bar-fill" style="width:${total}%;background:${col}"></div></div><div class="aud-feedback">${prof.desc}</div><div class="aud-detail"><div class="aud-chip"><div class="aud-chip-val" style="color:${fkScore>=28?'#16a34a':fkScore>=15?'#d97706':'#dc2626'}">${fkLabel}</div><div class="aud-chip-lbl">Readability</div></div><div class="aud-chip"><div class="aud-chip-val" style="color:${avgLen<=prof.sentLen?'#16a34a':'#d97706'}">${Math.round(avgLen)}w ${avgLen<=prof.sentLen?'✓':'↑ long'}</div><div class="aud-chip-lbl">Avg Sentence</div></div></div>`;
 }
 
-function updateRead(s){
+function updateRead(fres, fkgl){
   const v=document.getElementById('readVal'),d=document.getElementById('readDesc');
-  if(s>=80){v.innerText='Very Easy';d.innerText='Accessible to all readers. Ideal for broad consumer campaigns.';}
-  else if(s>=70){v.innerText='Easy';d.innerText='Clear and direct. Great for email marketing and landing pages.';}
-  else if(s>=60){v.innerText='Fairly Easy';d.innerText='Comfortable for most adults. Good for blogs and social copy.';}
-  else if(s>=50){v.innerText='Standard';d.innerText='Average reading level. Suitable for general B2B content.';}
-  else if(s>=40){v.innerText='Fairly Difficult';d.innerText='Best suited to informed professional audiences.';}
-  else if(s>=30){v.innerText='Difficult';d.innerText='Appropriate for technical or academic copy. Consider simplifying.';}
-  else{v.innerText='Very Difficult';d.innerText='Dense and complex. Likely to lose most readers.';}
+  const fkglEl=document.getElementById('fkglVal'),fresEl=document.getElementById('fresVal');
+
+  // Display FRES score with colour coding
+  const fresRound = Math.round(fres);
+  const fresCol = fres>=70?'#16a34a':fres>=50?'#d97706':'#dc2626';
+  fresEl.innerHTML = `<span style="color:${fresCol}">${fresRound}</span>`;
+
+  // Display FKGL as a grade level descriptor (UK-friendly)
+  const fkglRound = Math.max(0, parseFloat(fkgl.toFixed(1)));
+  let gradeLabel;
+  if(fkglRound <= 3) gradeLabel = 'Primary';
+  else if(fkglRound <= 6) gradeLabel = 'Upper Primary';
+  else if(fkglRound <= 9) gradeLabel = 'Secondary';
+  else if(fkglRound <= 12) gradeLabel = 'Sixth Form';
+  else if(fkglRound <= 16) gradeLabel = 'Undergraduate';
+  else gradeLabel = 'Postgraduate';
+  const fkglCol = fkglRound<=9?'#16a34a':fkglRound<=12?'#d97706':'#dc2626';
+  fkglEl.innerHTML = `<span style="color:${fkglCol}">${fkglRound}</span> <span style="font-size:9px;color:#aaa;font-weight:600">${gradeLabel}</span>`;
+
+  // FRES interpretation bands (from Flesch research, mapped to UK contexts)
+  // 90-100: Very Easy — Year 5 / age 10-11. Simple instructions, children's content.
+  // 80-90:  Easy — Year 6-7 / age 11-13. Consumer leaflets, broad public communications.
+  // 70-80:  Fairly Easy — Year 8-9 / age 13-15. Marketing emails, landing pages, blog posts.
+  // 60-70:  Plain English — GCSE level / age 15-16. General public web content, newsletters.
+  // 50-60:  Fairly Difficult — A-Level / age 16-18. B2B content, professional communications.
+  // 30-50:  Difficult — Undergraduate. Technical reports, academic journals, whitepapers.
+  // 0-30:   Very Difficult — Postgraduate+. Legal filings, specialist research, dense policy.
+  if(fres>=90){
+    v.innerText='Very Easy';
+    d.innerText='Primary school level. Ideal for simple instructions, signage, or broad public notices.';
+  } else if(fres>=80){
+    v.innerText='Easy';
+    d.innerText='Accessible to virtually all readers. Great for consumer leaflets and public communications.';
+  } else if(fres>=70){
+    v.innerText='Fairly Easy';
+    d.innerText='Clear and direct. Well suited to marketing emails, landing pages, and blog posts.';
+  } else if(fres>=60){
+    v.innerText='Plain English';
+    d.innerText='GCSE reading level. The standard for web content, newsletters, and general-audience copy.';
+  } else if(fres>=50){
+    v.innerText='Fairly Difficult';
+    d.innerText='A-Level reading level. Suitable for B2B content and professional communications.';
+  } else if(fres>=30){
+    v.innerText='Difficult';
+    d.innerText='Undergraduate level. Appropriate for technical reports, whitepapers, and academic copy.';
+  } else {
+    v.innerText='Very Difficult';
+    d.innerText='Postgraduate level. Dense and complex — likely to lose most general readers.';
+  }
 }
 
 function detectTone(words){
@@ -991,6 +1107,8 @@ function resetUI(){
   document.getElementById('scoreMsg').innerText='Paste copy to begin.';
   document.getElementById('readVal').innerText='—';
   document.getElementById('readDesc').innerText='Paste text to calculate.';
+  document.getElementById('fkglVal').innerText='—';
+  document.getElementById('fresVal').innerText='—';
   document.getElementById('kwList').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">No keywords yet.</p>';
   document.getElementById('targetKWResult').innerHTML='';
   document.getElementById('ctaBlock').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Paste text to detect.</p>';
