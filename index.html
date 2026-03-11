@@ -88,6 +88,8 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
 .ch{background:#f3e8ff;border-bottom:2px solid #a855f7;color:#6b21a8;padding:0 2px;border-radius:3px;cursor:pointer;position:relative}
 .rh{background:#dbeafe;border-bottom:2px solid #3b82f6;color:#1e40af;padding:0 2px;border-radius:3px;cursor:pointer;position:relative}
 .vh{background:#fce7f3;border-bottom:2px solid #ec4899;color:#9d174d;padding:0 2px;border-radius:3px}
+.clh{background:#fef3c7;border-bottom:2px solid #d97706;color:#92400e;padding:0 2px;border-radius:3px;cursor:pointer;position:relative}
+.clh-ok{background:#d1fae5;border-bottom:2px solid #10b981;color:#065f46;padding:0 2px;border-radius:3px;cursor:pointer;position:relative}
 .tip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:11px;padding:7px 11px;border-radius:8px;z-index:200;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.18);width:210px;white-space:normal;text-align:center;line-height:1.45;display:none}
 .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#111}
 
@@ -240,6 +242,7 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
         <button class="toggle-pill active" data-mode="sentence" onclick="toggleMode(this)">🟠 Long Sentences</button>
         <button class="toggle-pill active" data-mode="cliche"   onclick="toggleMode(this)">🟣 Clichés</button>
         <button class="toggle-pill active" data-mode="repeat"   onclick="toggleMode(this)">🔵 Echoes</button>
+        <button class="toggle-pill active" data-mode="claims"   onclick="toggleMode(this)">🟤 Claims</button>
         <button class="toggle-pill active" data-mode="variety"  onclick="toggleMode(this)">🩷 Variety</button>
       </div>
 
@@ -255,6 +258,7 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
             <div class="leg-item"><div class="leg-dot" style="background:#fed7aa;border:1px solid #f97316"></div>Long</div>
             <div class="leg-item"><div class="leg-dot" style="background:#e9d5ff;border:1px solid #a855f7"></div>Cliché</div>
             <div class="leg-item"><div class="leg-dot" style="background:#bfdbfe;border:1px solid #3b82f6"></div>Echo</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#fde68a;border:1px solid #d97706"></div>Claim</div>
             <div class="leg-item"><div class="leg-dot" style="background:#fce7f3;border:1px solid #ec4899"></div>Variety</div>
           </div>
           <div id="readingTime" style="font-size:10px;color:#bbb;font-weight:700">— min read</div>
@@ -340,6 +344,11 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f5f5f7;
       </div>
 
       <div class="card">
+        <div class="card-title">Claims Monitor</div>
+        <div id="claimsBlock"><p style="font-size:11px;color:#ccc;font-style:italic">Paste text to analyse claims.</p></div>
+      </div>
+
+      <div class="card">
         <div class="card-title">SEO Keyword Density</div>
         <input id="targetKW" type="text" placeholder="Enter target keyword…"
           style="width:100%;padding:9px 11px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:12px;font-family:inherit;color:#111;outline:none;transition:border-color .2s;margin-bottom:10px;background:#fff"
@@ -387,6 +396,31 @@ const CTA_PHRASES = ['buy now','get started','sign up','subscribe','download','l
 const TONE_AGG  = ['crush','dominate','destroy','kill','smash','win','beat','attack','force','unstoppable','ruthless','savage','obliterate','conquer'];
 const TONE_FORM = ['furthermore','therefore','henceforth','pursuant','accordingly','notwithstanding','herein','whereas','thereby','wherein'];
 const TONE_CONV = ['you','your','we','our','hey','awesome','great','love','easy','quick','simple','fun','together','discover','imagine'];
+
+// ── Claims detection patterns ─────────────────────────────────────────────────
+const CLAIM_PATTERNS = [
+  // Statistics: percentages, "X times", "X out of Y", "Xk+", "X million/billion"
+  {re:/\b\d[\d,.]*\s*%/gi, type:'Unsourced statistic — consider linking to the original data'},
+  {re:/\b\d[\d,.]*\s*x\s+(?:more|less|faster|slower|better|worse|higher|lower|greater|cheaper)/gi, type:'Unsourced comparative stat — cite your source'},
+  {re:/\b\d+\s+(?:out of|in every)\s+\d+/gi, type:'Unsourced ratio — link to the study or data'},
+  {re:/\b\d[\d,.]*\s*(?:million|billion|thousand|mn|bn|k)\b/gi, type:'Large figure — consider citing your source'},
+  {re:/\b(?:doubled|tripled|quadrupled|halved)\b/gi, type:'Growth claim — cite the data behind this'},
+
+  // Superlatives & absolutes (ASA-sensitive)
+  {re:/\b(?:the\s+)?(?:best|leading|number[\s-]?one|top[\s-]?rated|fastest|most\s+popular|most\s+trusted|most\s+advanced|highest[\s-]?rated|top[\s-]?ranking|first[\s-]?ever|only\s+(?:platform|tool|product|service|solution|provider))\b/gi, type:'Superlative claim — requires substantiation under ASA guidelines'},
+  {re:/\b(?:UK'?s?|Britain'?s?|world'?s?|Europe'?s?|market'?s?|industry'?s?)\s+(?:leading|largest|best|fastest|top|premier|foremost|favourite|favorite|number[\s-]?one|most\s+\w+)\b/gi, type:'Market position claim — must be verifiable under ASA/CAP Code'},
+
+  // Vague authority
+  {re:/\b(?:studies\s+show|research\s+shows?|experts?\s+agree|scientists?\s+(?:say|confirm|recommend)|it(?:'s|\s+is)\s+(?:proven|clinically\s+proven|scientifically\s+proven)|evidence\s+suggests?|data\s+shows?|according\s+to\s+(?:research|studies|experts?))\b/gi, type:'Vague authority — name the specific study, source, or expert'},
+
+  // Comparative claims
+  {re:/\b(?:better|faster|cheaper|more\s+(?:reliable|efficient|effective|powerful|secure|affordable)|outperforms?|beats?|surpass(?:es)?|exceeds?)\s+(?:than\s+)?(?:the\s+)?(?:competition|competitors?|alternatives?|the\s+rest|other\s+(?:platforms?|tools?|products?|services?|solutions?|providers?))\b/gi, type:'Comparative claim — name the comparison and cite evidence'},
+
+  // Unqualified absolutes
+  {re:/\b(?:guaranteed|100%\s+(?:effective|safe|secure|satisfaction|accurate|reliable)|never\s+fails?|always\s+works?|zero[\s-]?risk|no[\s-]?risk|risk[\s-]?free|fool[\s-]?proof)\b/gi, type:'Absolute claim — may need qualification or evidence'}
+];
+
+const URL_RE = /https?:\/\/[^\s\)\]]+|\[[^\]]*\]\(https?:\/\/[^\)]+\)/gi;
 const AUDIENCES = {
   general:      {fk:[70,100],passive:3, filler:5, sentLen:18,desc:'Short sentences, plain English, conversational tone. Aim for GCSE reading level or below.'},
   consumer:     {fk:[65,100],passive:4, filler:6, sentLen:20,desc:'Benefit-led, punchy, emotionally engaging. Accessible to secondary school readers.'},
@@ -396,7 +430,7 @@ const AUDIENCES = {
   academic:     {fk:[0,45],  passive:15,filler:2, sentLen:35,desc:'Formal, evidence-based, complex structure tolerated. Postgraduate level.'},
 };
 
-const modes={passive:true,filler:true,sentence:true,cliche:true,repeat:true,variety:true};
+const modes={passive:true,filler:true,sentence:true,cliche:true,repeat:true,variety:true,claims:true};
 let drafts=[],saveTimer=null,analyseTimer=null,lastScore=0,lastFK=60,lastWords=[],lastSentences=[];
 
 document.getElementById('reportDate').innerText=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
@@ -498,27 +532,6 @@ function splitSentences(text){
   });
 }
 
-function splitSentencesFromLine(line){
-  // Same logic as splitSentences but for a single line (no newline splitting)
-  const ABBREVS = /\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|Gen|Gov|Sgt|Cpl|Pvt|Rev|Col|Maj|Lt|Cmdr|Adm|Capt|Supt|Det|Insp|vs|etc|e\.g|i\.e|a\.m|p\.m|Inc|Ltd|Corp|Co|No|Vol|Dept|Est|approx|govt|fig|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.\s*$/i;
-  const results = [];
-  const trimmed = line.trim();
-  if (!trimmed) return results;
-
-  const tokens = trimmed.split(/(?<=[.!?])\s+|(?<=[;:])\s+/);
-  let buffer = '';
-  for (let i = 0; i < tokens.length; i++) {
-    buffer += (buffer ? ' ' : '') + tokens[i];
-    if (ABBREVS.test(buffer)) continue;
-    if (/[.!?;:]$/.test(tokens[i])) {
-      if (buffer.trim()) results.push(buffer.trim());
-      buffer = '';
-    }
-  }
-  if (buffer.trim()) results.push(buffer.trim());
-  return results;
-}
-
 function countSylls(word){
   word=word.toLowerCase(); if(word.length<=3) return 1;
   word=word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/,'').replace(/^y/,'');
@@ -544,7 +557,7 @@ function showTip(el){
   t.style.display=vis?'none':'block';
 }
 document.addEventListener('click',e=>{
-  if(!e.target.closest('.ph')&&!e.target.closest('.ch')&&!e.target.closest('.rh'))
+  if(!e.target.closest('.ph')&&!e.target.closest('.ch')&&!e.target.closest('.rh')&&!e.target.closest('.clh')&&!e.target.closest('.clh-ok'))
     document.querySelectorAll('.tip').forEach(t=>t.style.display='none');
 });
 
@@ -679,6 +692,45 @@ function analyse(){
 
   const counters = { p:0, f:0, c:0 };
 
+  // ── Claims detection ─────────────────────────────────────────────────────────
+  // Find all URLs in the text to check if claims are sourced
+  const urlRanges = [];
+  let urlMatch;
+  const urlRe = new RegExp(URL_RE.source, 'gi');
+  while ((urlMatch = urlRe.exec(text)) !== null) {
+    urlRanges.push({start: urlMatch.index, end: urlMatch.index + urlMatch[0].length});
+  }
+
+  function isSourced(claimStart, claimEnd) {
+    // Check if any URL exists within 200 chars of the claim
+    for (const u of urlRanges) {
+      if (u.start <= claimEnd + 200 && u.end >= claimStart - 200) return true;
+    }
+    return false;
+  }
+
+  const claimHighlights = []; // {start, end, cls, tip}
+  let claimsUnsourced = 0, claimsSourced = 0;
+
+  if (modes.claims) {
+    for (const pattern of CLAIM_PATTERNS) {
+      const re = new RegExp(pattern.re.source, 'gi');
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        const start = m.index;
+        const end = m.index + m[0].length;
+        const sourced = isSourced(start, end);
+        if (sourced) {
+          claimsSourced++;
+          claimHighlights.push({start, end, cls: 'clh-ok', tip: '✓ Sourced claim — link detected nearby'});
+        } else {
+          claimsUnsourced++;
+          claimHighlights.push({start, end, cls: 'clh', tip: pattern.type});
+        }
+      }
+    }
+  }
+
   // ── Build overlay HTML preserving EXACT character alignment with textarea ──
   // Walk through the raw text, inserting highlight spans without ever adding,
   // removing, or reordering characters. This keeps the transparent textarea
@@ -749,6 +801,11 @@ function analyse(){
     const wc = sent.trim().split(/\s+/).filter(w=>w.replace(/[^a-zA-Z]/g,'').length>0).length;
     if(modes.sentence && wc>=30) wrapHighlights.push({start:offset, end:offset+sent.length, cls:'sh'});
     if(modes.variety && varietyIssues.has(si)) wrapHighlights.push({start:offset, end:offset+sent.length, cls:'vh'});
+  }
+
+  // Add claim highlights to the inline set
+  for (const ch of claimHighlights) {
+    inlineHighlights.push(ch);
   }
 
   // De-overlap inline highlights
@@ -841,6 +898,7 @@ function analyse(){
   detectTone(lastWords);
   updateVariety(lastSentences,varietyIssues);
   detectCTA(text);
+  updateClaims(claimsUnsourced, claimsSourced, claimHighlights);
   updateKW(lastWords,text);
   updateAudience();
 }
@@ -858,16 +916,68 @@ function updateAudience(){
   if(!key){el.innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Select an audience to score your copy.</p>';return;}
   if(!lastWords.length){el.innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Paste copy to score against this audience.</p>';return;}
   const prof=AUDIENCES[key],[fkMin,fkMax]=prof.fk;
-  const fkScore=Math.round(((Math.max(fkMin,Math.min(fkMax,lastFK))-fkMin)/(fkMax-fkMin||1))*40);
-  const avgLen=lastSentences.length?lastWords.length/lastSentences.length:0;
-  const lenScore=Math.round(Math.max(0,30-(Math.abs(avgLen-prof.sentLen)*3)));
-  const ir=((parseInt(document.getElementById('sPassive').innerText)||0)+(parseInt(document.getElementById('sFiller').innerText)||0))/(lastWords.length||1)*100;
-  const issueScore=Math.round(Math.max(0,30-(Math.max(0,ir-prof.passive)*4)));
-  const total=Math.min(100,fkScore+lenScore+issueScore);
-  const col=total>=75?'#22c55e':total>=50?'#f59e0b':'#ef4444';
-  const lbl=total>=75?'Strong Match':total>=50?'Partial Match':'Poor Match';
-  const fkLabel=lastFK>=90?'Very Easy':lastFK>=80?'Easy':lastFK>=70?'Fairly Easy':lastFK>=60?'Plain English':lastFK>=50?'Fairly Difficult':lastFK>=30?'Difficult':'Very Difficult';
-  el.innerHTML=`<div class="aud-score-row" style="margin-bottom:4px"><span class="aud-score-num" style="color:${col}">${total}%</span><span style="font-size:11px;font-weight:800;color:${col}">${lbl}</span></div><div class="aud-bar-track"><div class="aud-bar-fill" style="width:${total}%;background:${col}"></div></div><div class="aud-feedback">${prof.desc}</div><div class="aud-detail"><div class="aud-chip"><div class="aud-chip-val" style="color:${fkScore>=28?'#16a34a':fkScore>=15?'#d97706':'#dc2626'}">${fkLabel}</div><div class="aud-chip-lbl">Readability</div></div><div class="aud-chip"><div class="aud-chip-val" style="color:${avgLen<=prof.sentLen?'#16a34a':'#d97706'}">${Math.round(avgLen)}w ${avgLen<=prof.sentLen?'✓':'↑ long'}</div><div class="aud-chip-lbl">Avg Sentence</div></div></div>`;
+
+  // ── Readability score (max 40pts) ──
+  // Graduated scoring: full marks inside the range, partial credit for being close,
+  // with a generous buffer zone rather than a cliff edge.
+  let fkScore;
+  if (lastFK >= fkMin && lastFK <= fkMax) {
+    // Inside ideal range — full marks
+    fkScore = 40;
+  } else if (lastFK < fkMin) {
+    // Below range — lose 2pts per point below, but floor at 0
+    const distance = fkMin - lastFK;
+    fkScore = Math.max(0, Math.round(40 - (distance * 2)));
+  } else {
+    // Above range — text is easier than needed, mild penalty (1pt per point over)
+    const distance = lastFK - fkMax;
+    fkScore = Math.max(15, Math.round(40 - distance));
+  }
+
+  // ── Sentence length score (max 30pts) ──
+  // Only penalise for being too long, not too short. Being concise is never a problem.
+  const avgLen = lastSentences.length ? lastWords.length / lastSentences.length : 0;
+  let lenScore;
+  if (avgLen <= prof.sentLen) {
+    lenScore = 30; // At or under target — full marks
+  } else {
+    // Over target — lose 2pts per word over, floor at 0
+    const over = avgLen - prof.sentLen;
+    lenScore = Math.max(0, Math.round(30 - (over * 2)));
+  }
+
+  // ── Issue score (max 30pts) ──
+  // Gentler penalty curve — allow some passive/filler usage before penalising heavily.
+  const passiveCount = parseInt(document.getElementById('sPassive').innerText) || 0;
+  const fillerCount = parseInt(document.getElementById('sFiller').innerText) || 0;
+  const totalIssues = passiveCount + fillerCount;
+  const issueRate = totalIssues / (lastWords.length || 1) * 100;
+  // Each audience has a tolerance threshold; only penalise above it
+  const tolerance = prof.passive; // reuse the passive threshold as general tolerance %
+  const excessRate = Math.max(0, issueRate - tolerance);
+  const issueScore = Math.max(0, Math.round(30 - (excessRate * 2)));
+
+  const total = Math.min(100, fkScore + lenScore + issueScore);
+  const col = total >= 75 ? '#22c55e' : total >= 50 ? '#f59e0b' : '#ef4444';
+  const lbl = total >= 75 ? 'Strong Match' : total >= 50 ? 'Partial Match' : 'Poor Match';
+  const fkLabel = lastFK >= 90 ? 'Very Easy' : lastFK >= 80 ? 'Easy' : lastFK >= 70 ? 'Fairly Easy' : lastFK >= 60 ? 'Plain English' : lastFK >= 50 ? 'Fairly Difficult' : lastFK >= 30 ? 'Difficult' : 'Very Difficult';
+
+  // Contextual feedback based on the weakest component
+  let feedback = prof.desc;
+  const weakest = Math.min(fkScore, lenScore, issueScore);
+  if (total >= 75) {
+    feedback = 'Your copy is well matched to this audience. ' + prof.desc;
+  } else if (weakest === fkScore && lastFK < fkMin) {
+    feedback = 'Your vocabulary and sentence complexity may be too advanced for this audience. Try shorter words and simpler phrasing.';
+  } else if (weakest === fkScore && lastFK > fkMax) {
+    feedback = 'Your copy is simpler than this audience expects. You can afford more sophisticated language.';
+  } else if (weakest === lenScore) {
+    feedback = 'Your average sentence length is above target. Try breaking longer sentences into two.';
+  } else if (weakest === issueScore) {
+    feedback = 'Too many passive or filler phrases for this audience. Tighten your phrasing.';
+  }
+
+  el.innerHTML = `<div class="aud-score-row" style="margin-bottom:4px"><span class="aud-score-num" style="color:${col}">${total}%</span><span style="font-size:11px;font-weight:800;color:${col}">${lbl}</span></div><div class="aud-bar-track"><div class="aud-bar-fill" style="width:${total}%;background:${col}"></div></div><div class="aud-feedback">${feedback}</div><div class="aud-detail"><div class="aud-chip"><div class="aud-chip-val" style="color:${fkScore>=28?'#16a34a':fkScore>=15?'#d97706':'#dc2626'}">${fkLabel}</div><div class="aud-chip-lbl">Readability</div></div><div class="aud-chip"><div class="aud-chip-val" style="color:${avgLen<=prof.sentLen?'#16a34a':'#d97706'}">${Math.round(avgLen)}w ${avgLen<=prof.sentLen?'✓':'↑ long'}</div><div class="aud-chip-lbl">Avg Sentence</div></div></div>`;
 }
 
 function updateRead(fres, fkgl){
@@ -954,6 +1064,46 @@ function detectCTA(text){
   }else{
     el.innerHTML=`<div class="cta-missing"><div style="font-weight:800;margin-bottom:4px">⚠️ No CTA Detected</div><div>Your copy lacks a clear call to action. Try <strong>"Get started"</strong>, <strong>"Book a demo"</strong> or <strong>"Sign up free"</strong>.</div></div>`;
   }
+}
+
+function updateClaims(unsourced, sourced, highlights) {
+  const el = document.getElementById('claimsBlock');
+  const total = unsourced + sourced;
+
+  if (total === 0) {
+    el.innerHTML = '<div style="font-size:11px;color:#888;line-height:1.6"><div style="font-weight:800;margin-bottom:4px">✓ No claims detected</div><div>Your copy doesn\'t contain detectable statistical, superlative, or comparative claims.</div></div>';
+    return;
+  }
+
+  const scorePercent = total > 0 ? Math.round((sourced / total) * 100) : 0;
+  const col = scorePercent >= 75 ? '#22c55e' : scorePercent >= 40 ? '#f59e0b' : '#ef4444';
+  const statusLabel = scorePercent >= 75 ? '✓ Well Sourced' : scorePercent >= 40 ? '⚠️ Partially Sourced' : '⚠️ Needs Sources';
+
+  // Group unsourced claims by type for the breakdown
+  const typeCounts = {};
+  for (const h of highlights) {
+    if (h.cls === 'clh') {
+      const shortType = h.tip.split('—')[0].trim();
+      typeCounts[shortType] = (typeCounts[shortType] || 0) + 1;
+    }
+  }
+
+  const breakdown = Object.entries(typeCounts).map(([type, count]) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:11px"><span style="color:#92400e">${type}</span><span style="font-weight:700;color:#d97706">${count}</span></div>`
+  ).join('');
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:22px;font-weight:900;color:${col}">${scorePercent}%</span>
+      <span style="font-size:10px;font-weight:700;color:${col}">${statusLabel}</span>
+    </div>
+    <div class="aud-bar-track"><div class="aud-bar-fill" style="width:${scorePercent}%;background:${col}"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0">
+      <div class="aud-chip"><div class="aud-chip-val" style="color:#d97706">${unsourced}</div><div class="aud-chip-lbl">Unsourced</div></div>
+      <div class="aud-chip"><div class="aud-chip-val" style="color:#16a34a">${sourced}</div><div class="aud-chip-lbl">Sourced</div></div>
+    </div>
+    ${breakdown ? '<div style="margin-top:6px">' + breakdown + '</div>' : ''}
+    <div style="font-size:10px;color:#aaa;margin-top:8px;line-height:1.5">Claims near a URL are marked as sourced. Add hyperlinks next to statistics and superlatives to improve your score.</div>`;
 }
 
 function updateKW(words,text){
@@ -1112,6 +1262,7 @@ function resetUI(){
   document.getElementById('kwList').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">No keywords yet.</p>';
   document.getElementById('targetKWResult').innerHTML='';
   document.getElementById('ctaBlock').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Paste text to detect.</p>';
+  document.getElementById('claimsBlock').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Paste text to analyse claims.</p>';
   document.getElementById('varietyBlock').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Paste text to analyse.</p>';
   document.getElementById('readingTime').innerText='— min read';
   document.getElementById('audResult').innerHTML='<p style="font-size:11px;color:#ccc;font-style:italic">Select an audience to score your copy.</p>';
