@@ -402,21 +402,40 @@ function syncScroll(){ ov.scrollTop = ta.scrollTop; }
 ta.addEventListener('scroll', syncScroll);
 
 // ── Sync overlay height to textarea content height ────────────────────────────
+let lastHeight = 420;
 function syncHeight(){
-  // Reset height to auto so it can shrink, then set to scrollHeight
-  ta.style.height = 'auto';
-  const h = Math.max(420, ta.scrollHeight);
-  ta.style.height = h + 'px';
-  ov.style.height  = h + 'px';
-  // Keep the wrapper tall enough
-  ta.closest('.editor-wrap').style.minHeight = h + 'px';
+  // Temporarily set height to 0 to get true scrollHeight, but do it
+  // off the visual frame by reading scrollHeight without collapsing to 'auto'.
+  // We only grow or shrink — never reset to auto which causes cursor jumps.
+  const scroll = ta.scrollHeight;
+  const h = Math.max(420, scroll);
+  if (h !== lastHeight) {
+    lastHeight = h;
+    ta.style.height = h + 'px';
+    ov.style.height  = h + 'px';
+    ta.closest('.editor-wrap').style.minHeight = h + 'px';
+  }
 }
 
 // ── Main input handler ────────────────────────────────────────────────────────
 function onEditorInput(){
-  syncHeight();
+  // IMMEDIATELY mirror raw text into the overlay so characters appear without delay.
+  // This keeps typing feel instant — highlights get layered on by the debounced analyse().
+  ov.textContent = ta.value + '\n';
+  syncScroll();
+
+  // Grow the box immediately if needed (cheap check, no reflow thrash)
+  const scroll = ta.scrollHeight;
+  const h = Math.max(420, scroll);
+  if (h > lastHeight) {
+    lastHeight = h;
+    ta.style.height = h + 'px';
+    ov.style.height  = h + 'px';
+    ta.closest('.editor-wrap').style.minHeight = h + 'px';
+  }
+  // Debounce the heavy analysis work so typing stays smooth
   clearTimeout(analyseTimer);
-  analyseTimer = setTimeout(()=>{ analyse(); scheduleSave(); persistSave(); }, 80);
+  analyseTimer = setTimeout(()=>{ analyse(); syncHeight(); scheduleSave(); persistSave(); }, 300);
 }
 
 ta.addEventListener('input', onEditorInput);
@@ -425,7 +444,6 @@ ta.addEventListener('input', onEditorInput);
 ta.addEventListener('paste', e=>{
   e.preventDefault();
   const text = (e.clipboardData||window.clipboardData).getData('text/plain');
-  // Insert at cursor
   const start = ta.selectionStart, end = ta.selectionEnd;
   const before = ta.value.slice(0, start);
   const after  = ta.value.slice(end);
@@ -438,15 +456,65 @@ ta.addEventListener('paste', e=>{
 function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function splitSentences(text){
-  const parts=[]; let buf='';
-  for(let i=0;i<text.length;i++){
-    buf+=text[i];
-    if('.!?'.includes(text[i])&&i<text.length-1&&text[i+1]===' '){
-      parts.push(buf.trimEnd()); buf=''; i++;
+  // Common abbreviations that shouldn't trigger a split
+  const ABBREVS = /\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|Gen|Gov|Sgt|Cpl|Pvt|Rev|Col|Maj|Lt|Cmdr|Adm|Capt|Supt|Det|Insp|vs|etc|e\.g|i\.e|a\.m|p\.m|Inc|Ltd|Corp|Co|No|Vol|Dept|Est|approx|govt|fig|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.\s*$/i;
+
+  const results = [];
+
+  // 1. Split on line breaks first (handles bullets, headings, short lines)
+  const lines = text.split(/\n+/);
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // 2. Split each line on sentence-ending punctuation (.!?) followed by
+    //    a space or end-of-string, plus semicolons and colons followed by a space.
+    const tokens = trimmed.split(/(?<=[.!?])\s+|(?<=[;:])\s+/);
+
+    let buffer = '';
+    for (let i = 0; i < tokens.length; i++) {
+      buffer += (buffer ? ' ' : '') + tokens[i];
+
+      // Check if this looks like it ends with an abbreviation — if so, don't split yet
+      if (ABBREVS.test(buffer)) continue;
+
+      // Check if the token ends with sentence-ending punctuation, a semicolon, or colon
+      if (/[.!?;:]$/.test(tokens[i])) {
+        if (buffer.trim()) results.push(buffer.trim());
+        buffer = '';
+      }
+    }
+    // Flush any remaining text in the buffer (handles last sentence without trailing punctuation)
+    if (buffer.trim()) results.push(buffer.trim());
+  }
+
+  return results.filter(s => {
+    // Only count segments that have at least 2 words (avoids single-word "sentences")
+    const wordCount = s.split(/\s+/).filter(w => w.replace(/[^a-zA-Z]/g, '').length > 0).length;
+    return wordCount >= 2;
+  });
+}
+
+function splitSentencesFromLine(line){
+  // Same logic as splitSentences but for a single line (no newline splitting)
+  const ABBREVS = /\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|Gen|Gov|Sgt|Cpl|Pvt|Rev|Col|Maj|Lt|Cmdr|Adm|Capt|Supt|Det|Insp|vs|etc|e\.g|i\.e|a\.m|p\.m|Inc|Ltd|Corp|Co|No|Vol|Dept|Est|approx|govt|fig|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.\s*$/i;
+  const results = [];
+  const trimmed = line.trim();
+  if (!trimmed) return results;
+
+  const tokens = trimmed.split(/(?<=[.!?])\s+|(?<=[;:])\s+/);
+  let buffer = '';
+  for (let i = 0; i < tokens.length; i++) {
+    buffer += (buffer ? ' ' : '') + tokens[i];
+    if (ABBREVS.test(buffer)) continue;
+    if (/[.!?;:]$/.test(tokens[i])) {
+      if (buffer.trim()) results.push(buffer.trim());
+      buffer = '';
     }
   }
-  if(buf.trim()) parts.push(buf.trimEnd());
-  return parts.filter(s=>s.trim().length>0);
+  if (buffer.trim()) results.push(buffer.trim());
+  return results;
 }
 
 function countSylls(word){
@@ -478,6 +546,51 @@ document.addEventListener('click',e=>{
     document.querySelectorAll('.tip').forEach(t=>t.style.display='none');
 });
 
+// ── Annotate a single sentence with highlights ───────────────────────────────
+function annotateSentence(sent, si, repeatSet, varietyIssues, counters){
+  const ann=[];
+
+  if(modes.filler) FILLERS.forEach(w=>{
+    const re=new RegExp(`\\b${w}\\b`,'gi'); let m;
+    while((m=re.exec(sent))!==null){ counters.f++; ann.push({start:m.index,end:m.index+m[0].length,cls:'fh',tip:null}); }
+  });
+
+  if(modes.cliche) Object.entries(CLICHES).forEach(([phrase,tip])=>{
+    const re=new RegExp(`\\b${phrase.replace(/[-]/g,'[\\s-]')}\\b`,'gi'); let m;
+    while((m=re.exec(sent))!==null){ counters.c++; ann.push({start:m.index,end:m.index+m[0].length,cls:'ch',tip}); }
+  });
+
+  if(modes.repeat) repeatSet.forEach(w=>{
+    const re=new RegExp(`\\b${w}\\b`,'gi'); let m;
+    while((m=re.exec(sent))!==null) ann.push({start:m.index,end:m.index+m[0].length,cls:'rh',tip:'Repeated nearby — try a synonym'});
+  });
+
+  if(modes.passive){
+    const pr=new RegExp(PASSIVE_RE.source,'gi'); let m;
+    while((m=pr.exec(sent))!==null){ counters.p++; ann.push({start:m.index,end:m.index+m[0].length,cls:'ph',tip:getSug(m[0])}); }
+  }
+
+  ann.sort((a,b)=>a.start-b.start||b.end-a.end);
+  const filtered=[]; let cursor=0;
+  for(const a of ann) if(a.start>=cursor){ filtered.push(a); cursor=a.end; }
+
+  let html='',pos=0;
+  for(const a of filtered){
+    if(a.start>pos) html+=esc(sent.slice(pos,a.start));
+    const inner=esc(sent.slice(a.start,a.end));
+    html+=a.tip
+      ?`<span class="${a.cls}" onclick="showTip(this)">${inner}<span class="tip">${a.tip}</span></span>`
+      :`<span class="${a.cls}">${inner}</span>`;
+    pos=a.end;
+  }
+  if(pos<sent.length) html+=esc(sent.slice(pos));
+
+  if(modes.variety&&varietyIssues.has(si)) html=`<span class="vh">${html}</span>`;
+  const wc=sent.trim().split(/\s+/).filter(w=>w.replace(/[^a-zA-Z]/g,'').length>0).length;
+  if(modes.sentence&&wc>=30) html=`<span class="sh">${html}</span>`;
+  return html;
+}
+
 // ── Core analysis ─────────────────────────────────────────────────────────────
 function analyse(){
   const text = ta.value;
@@ -506,55 +619,136 @@ function analyse(){
   const varietyIssues=new Set();
   for(let i=1;i<starts.length;i++) if(starts[i]&&starts[i]===starts[i-1]&&starts[i].length>2) varietyIssues.add(i);
 
-  let pCount=0,fCount=0,cCount=0;
+  const counters = { p:0, f:0, c:0 };
 
-  const sentHTMLs=lastSentences.map((sent,si)=>{
-    const ann=[];
+  // ── Build overlay HTML preserving EXACT character alignment with textarea ──
+  // Walk through the raw text, inserting highlight spans without ever adding,
+  // removing, or reordering characters. This keeps the transparent textarea
+  // caret perfectly aligned with the visible overlay text.
+
+  // Map each sentence back to its position in the raw text.
+  // Because splitSentences trims, we search for each sentence allowing
+  // leading/trailing whitespace flexibility.
+  const sentPositions = []; // {start, end, sentIdx}
+  let searchFrom = 0;
+  for (let si = 0; si < lastSentences.length; si++) {
+    const sent = lastSentences[si];
+    // Find this sentence in the raw text — try exact match first
+    let idx = text.indexOf(sent, searchFrom);
+    if (idx === -1) {
+      // Fallback: try matching just the first 30 chars to handle minor trim differences
+      const prefix = sent.slice(0, 30);
+      idx = text.indexOf(prefix, searchFrom);
+    }
+    if (idx !== -1) {
+      sentPositions.push({start: idx, end: idx + sent.length, sentIdx: si, text: sent});
+      searchFrom = idx + sent.length;
+    }
+  }
+
+  // Collect all highlight ranges mapped to raw text positions
+  const inlineHighlights = []; // {start, end, cls, tip}
+  const wrapHighlights = [];   // {start, end, cls} — sentence-level (long/variety)
+
+  for (const sp of sentPositions) {
+    const sent = sp.text;
+    const offset = sp.start;
+    const si = sp.sentIdx;
 
     if(modes.filler) FILLERS.forEach(w=>{
       const re=new RegExp(`\\b${w}\\b`,'gi'); let m;
-      while((m=re.exec(sent))!==null){ fCount++; ann.push({start:m.index,end:m.index+m[0].length,cls:'fh',tip:null}); }
+      while((m=re.exec(sent))!==null){ counters.f++; inlineHighlights.push({start:offset+m.index, end:offset+m.index+m[0].length, cls:'fh', tip:null}); }
     });
 
     if(modes.cliche) Object.entries(CLICHES).forEach(([phrase,tip])=>{
       const re=new RegExp(`\\b${phrase.replace(/[-]/g,'[\\s-]')}\\b`,'gi'); let m;
-      while((m=re.exec(sent))!==null){ cCount++; ann.push({start:m.index,end:m.index+m[0].length,cls:'ch',tip}); }
+      while((m=re.exec(sent))!==null){ counters.c++; inlineHighlights.push({start:offset+m.index, end:offset+m.index+m[0].length, cls:'ch', tip}); }
     });
 
     if(modes.repeat) repeatSet.forEach(w=>{
       const re=new RegExp(`\\b${w}\\b`,'gi'); let m;
-      while((m=re.exec(sent))!==null) ann.push({start:m.index,end:m.index+m[0].length,cls:'rh',tip:'Repeated nearby — try a synonym'});
+      while((m=re.exec(sent))!==null) inlineHighlights.push({start:offset+m.index, end:offset+m.index+m[0].length, cls:'rh', tip:'Repeated nearby — try a synonym'});
     });
 
     if(modes.passive){
       const pr=new RegExp(PASSIVE_RE.source,'gi'); let m;
-      while((m=pr.exec(sent))!==null){ pCount++; ann.push({start:m.index,end:m.index+m[0].length,cls:'ph',tip:getSug(m[0])}); }
+      while((m=pr.exec(sent))!==null){ counters.p++; inlineHighlights.push({start:offset+m.index, end:offset+m.index+m[0].length, cls:'ph', tip:getSug(m[0])}); }
     }
 
-    ann.sort((a,b)=>a.start-b.start||b.end-a.end);
-    const filtered=[]; let cursor=0;
-    for(const a of ann) if(a.start>=cursor){ filtered.push(a); cursor=a.end; }
+    // Sentence-level highlights
+    const wc = sent.trim().split(/\s+/).filter(w=>w.replace(/[^a-zA-Z]/g,'').length>0).length;
+    if(modes.sentence && wc>=30) wrapHighlights.push({start:offset, end:offset+sent.length, cls:'sh'});
+    if(modes.variety && varietyIssues.has(si)) wrapHighlights.push({start:offset, end:offset+sent.length, cls:'vh'});
+  }
 
-    let html='',pos=0;
-    for(const a of filtered){
-      if(a.start>pos) html+=esc(sent.slice(pos,a.start));
-      const inner=esc(sent.slice(a.start,a.end));
-      html+=a.tip
-        ?`<span class="${a.cls}" onclick="showTip(this)">${inner}<span class="tip">${a.tip}</span></span>`
-        :`<span class="${a.cls}">${inner}</span>`;
-      pos=a.end;
+  // De-overlap inline highlights
+  inlineHighlights.sort((a,b) => a.start - b.start || b.end - a.end);
+  const filtered = []; let cursor = 0;
+  for (const h of inlineHighlights) { if (h.start >= cursor) { filtered.push(h); cursor = h.end; } }
+
+  // Build the overlay HTML walking through raw text character-by-character
+  let overlayHTML = '';
+  let pos = 0;
+
+  function wrapOpen(charPos) {
+    let tags = '';
+    for (const w of wrapHighlights) {
+      if (charPos === w.start) tags += `<span class="${w.cls}">`;
     }
-    if(pos<sent.length) html+=esc(sent.slice(pos));
+    return tags;
+  }
+  function wrapClose(charPos) {
+    let tags = '';
+    for (const w of wrapHighlights) {
+      if (charPos === w.end) tags += '</span>';
+    }
+    return tags;
+  }
 
-    if(modes.variety&&varietyIssues.has(si)) html=`<span class="vh">${html}</span>`;
-    const wc=sent.trim().split(/\s+/).filter(w=>w.replace(/[^a-zA-Z]/g,'').length>0).length;
-    if(modes.sentence&&wc>=30) html=`<span class="sh">${html}</span>`;
-    return html;
-  });
+  for (const h of filtered) {
+    // Text before this highlight
+    if (h.start > pos) {
+      const segment = text.slice(pos, h.start);
+      // Check for wrap opens/closes within this segment
+      let segHTML = '';
+      for (let i = 0; i < segment.length; i++) {
+        const absPos = pos + i;
+        segHTML += wrapClose(absPos) + wrapOpen(absPos) + esc(segment[i]);
+      }
+      segHTML += wrapClose(pos + segment.length);
+      overlayHTML += segHTML;
+    }
 
-  // Write to overlay — append a trailing newline so last line renders correctly
-  ov.innerHTML = sentHTMLs.join(' ') + '\n';
+    // The highlight itself
+    const openTags = wrapOpen(h.start);
+    const inner = esc(text.slice(h.start, h.end));
+    const spanContent = h.tip
+      ? `<span class="${h.cls}" onclick="showTip(this)">${inner}<span class="tip">${h.tip}</span></span>`
+      : `<span class="${h.cls}">${inner}</span>`;
+    overlayHTML += openTags + spanContent;
+
+    // Close wraps that end exactly at the end of this highlight
+    overlayHTML += wrapClose(h.end);
+    pos = h.end;
+  }
+
+  // Remaining text after last inline highlight
+  if (pos < text.length) {
+    const segment = text.slice(pos);
+    let segHTML = '';
+    for (let i = 0; i < segment.length; i++) {
+      const absPos = pos + i;
+      segHTML += wrapClose(absPos) + wrapOpen(absPos) + esc(segment[i]);
+    }
+    segHTML += wrapClose(pos + segment.length);
+    overlayHTML += segHTML;
+  }
+
+  // Trailing newline so last line renders correctly
+  ov.innerHTML = overlayHTML + '\n';
   syncScroll();
+
+  let pCount = counters.p, fCount = counters.f, cCount = counters.c;
 
   document.getElementById('sPassive').innerText=pCount;
   document.getElementById('sFiller').innerText =fCount;
@@ -721,9 +915,28 @@ function calcScore(text){
 
 function fixAllFillers(){
   let t=ta.value; if(!t.trim()) return;
-  FILLERS.forEach(w=>{t=t.replace(new RegExp(`\\s?\\b${w}\\b\\s?`,'gi'),' ');});
-  ta.value=t.replace(/ {2,}/g,' ').replace(/ ([.,!?;:])/g,'$1').trim();
+  // Replace each filler word with a single space, preserving surrounding structure
+  FILLERS.forEach(w=>{
+    // Match filler with optional surrounding spaces, but use a function to
+    // ensure we always leave exactly one space (or nothing at line boundaries)
+    t = t.replace(new RegExp(`(^|\\s)\\b${w}\\b(\\s|$)`,'gi'), (match, before, after) => {
+      // If at start or end of string, collapse to nothing
+      if (!before && !after) return '';
+      // Otherwise leave a single space
+      return ' ';
+    });
+  });
+  // Clean up: collapse multiple spaces, fix space before punctuation, trim lines
+  t = t.replace(/ {2,}/g,' ')
+       .replace(/ ([.,!?;:])/g,'$1')
+       .replace(/^ +/gm,'')  // trim leading spaces on each line
+       .replace(/ +$/gm,'')  // trim trailing spaces on each line
+       .trim();
+  const beforeCount = parseInt(document.getElementById('sFiller').innerText) || 0;
+  ta.value = t;
   onEditorInput();
+  if(beforeCount > 0) showToast(`⚡ Removed ${beforeCount} filler${beforeCount!==1?'s':''}`);
+  else showToast('✓ No fillers found');
 }
 
 // ── Autosave drafts ───────────────────────────────────────────────────────────
@@ -793,13 +1006,56 @@ async function runAIAudit(){
   panel.classList.add('open');
   setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
   out.innerHTML='<div class="loading-wrap"><div class="spinner"></div><p>Analysing your copy…</p></div>';
-  const sys=`You are an elite Direct-Response Copy Editor and SEO Analyst. Return ONLY a raw JSON object — no markdown fences, no commentary. Shape: {"activeScore":"82%","readability":"Standard","wordCount":123,"passiveFlags":[{"original":"phrase","suggestion":"fix"}],"fillerWords":[{"word":"just","count":3}],"cliches":[{"phrase":"game changer","suggestion":"describe actual impact"}],"keywords":[{"word":"conversion","density":"2.1%","status":"Optimal"}],"rewrite":"Full rewritten lean version."}`;
+
+  // Truncate very long copy to avoid blowing the context/token budget
+  const maxChars = 6000;
+  const inputText = text.length > maxChars ? text.slice(0, maxChars) + '\n\n[Truncated for analysis — first ~' + Math.round(maxChars/6) + ' words analysed]' : text;
+
+  const sys=`You are an elite Direct-Response Copy Editor and SEO Analyst. Analyse the user's marketing copy and return ONLY a raw JSON object — no markdown fences, no commentary, no explanation before or after the JSON. The JSON shape must be exactly:
+{"activeScore":"82%","readability":"Standard","wordCount":123,"passiveFlags":[{"original":"was built by our team","suggestion":"our team built"}],"fillerWords":[{"word":"just","count":3}],"cliches":[{"phrase":"game changer","suggestion":"describe actual impact"}],"keywords":[{"word":"conversion","density":"2.1%","status":"Optimal"}],"rewrite":"A concise rewritten version of the FIRST PARAGRAPH ONLY, max 120 words."}
+Important: The "rewrite" field must ONLY rewrite the first paragraph and stay under 120 words. For readability use one of: Very Easy, Easy, Fairly Easy, Standard, Fairly Difficult, Difficult, Very Difficult. For keyword status use: Optimal, High, or Low.`;
+
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content:text}]})});
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1500,
+        system:sys,
+        messages:[{role:'user',content:inputText}]
+      })
+    });
+
+    if(!res.ok){
+      const status = res.status;
+      if(status === 401) throw new Error('AUTH');
+      if(status === 429) throw new Error('RATE');
+      throw new Error('HTTP_' + status);
+    }
+
     const data=await res.json();
     const raw=(data.content||[]).map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
-    renderAI(JSON.parse(raw),text);
-  }catch(e){ out.innerHTML='<p style="color:#ef4444;font-size:12px;padding:8px 0">⚠️ Failed to load AI report. Please try again.</p>'; }
+
+    // Attempt to parse — if truncated, try to recover by closing the JSON
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch(parseErr) {
+      // Try to salvage truncated JSON by finding last complete field
+      const recovered = raw.replace(/,\s*"[^"]*$/, '') // remove incomplete last key
+                           .replace(/,\s*$/, '')        // remove trailing comma
+                           + '}';
+      parsed = JSON.parse(recovered);
+    }
+
+    renderAI(parsed, text);
+  }catch(e){
+    let msg = '⚠️ Failed to load AI report. Please try again.';
+    if(e.message === 'AUTH') msg = '⚠️ API authentication failed. This feature requires a valid API key.';
+    else if(e.message === 'RATE') msg = '⚠️ Rate limited — please wait a moment and try again.';
+    out.innerHTML=`<p style="color:#ef4444;font-size:12px;padding:8px 0">${msg}</p>`;
+  }
 }
 
 function renderAI(r,original){
@@ -807,9 +1063,16 @@ function renderAI(r,original){
   const fillers=r.fillerWords?.length?r.fillerWords.map(f=>`<li>"<strong>${f.word}</strong>" — ${f.count}×</li>`).join(''):'<li style="color:#aaa">None detected.</li>';
   const cliches=r.cliches?.length?r.cliches.map(c=>`<li>"<strong>${c.phrase}</strong>" — ${c.suggestion}</li>`).join(''):'<li style="color:#aaa">None detected.</li>';
   const kw=r.keywords?.length?`<table class="ai-kw-table"><thead><tr><th>Keyword</th><th>Density</th><th>Status</th></tr></thead><tbody>${r.keywords.map(k=>`<tr><td style="text-transform:capitalize">${k.word}</td><td style="color:#6366f1;font-family:monospace">${k.density}</td><td>${k.status==='Optimal'?'🟢':k.status==='High'?'🔴':'🟡'} ${k.status}</td></tr>`).join('')}</tbody></table>`:'<p style="color:#aaa">No keywords extracted.</p>';
-  const ba=`<div class="ba-grid"><div class="ba-box ba-before"><div class="ba-label">Before</div><div class="ba-text">${esc(original)}</div></div><div class="ba-box ba-after"><div class="ba-label">After</div><div class="ba-text">${esc(r.rewrite||'')}</div></div></div>`;
+
+  // Only show first paragraph in Before box to keep it readable
+  const firstPara = original.split(/\n\s*\n/)[0] || original.slice(0, 500);
+  const truncNote = original.length > firstPara.length ? '<div style="font-size:10px;color:#bbb;margin-top:6px;font-style:italic">First paragraph shown — rewrite applies to this section.</div>' : '';
+  const ba = r.rewrite
+    ? `<div class="ba-grid"><div class="ba-box ba-before"><div class="ba-label">Before</div><div class="ba-text">${esc(firstPara)}</div>${truncNote}</div><div class="ba-box ba-after"><div class="ba-label">After</div><div class="ba-text">${esc(r.rewrite)}</div></div></div>`
+    : '<p style="color:#aaa">No rewrite generated.</p>';
+
   document.getElementById('aiOutput').innerHTML=`
-    <div class="ai-section"><h4>Executive Summary</h4><p><strong>Active Score:</strong> ${r.activeScore} · <strong>Readability:</strong> ${r.readability} · <strong>Words:</strong> ${r.wordCount}</p></div>
+    <div class="ai-section"><h4>Executive Summary</h4><p><strong>Active Score:</strong> ${r.activeScore||'—'} · <strong>Readability:</strong> ${r.readability||'—'} · <strong>Words:</strong> ${r.wordCount||'—'}</p></div>
     <div class="ai-section"><h4>🔴 Passive Voice Flags</h4>${passive}</div>
     <div class="ai-section"><h4>🟡 Filler Alerts</h4><ul>${fillers}</ul></div>
     <div class="ai-section"><h4>🟣 Cliché Flags</h4><ul>${cliches}</ul></div>
